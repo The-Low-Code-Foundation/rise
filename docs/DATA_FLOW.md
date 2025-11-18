@@ -10,6 +10,101 @@ This tool uses a **hybrid data flow model** combining the best of component-base
 
 This gives you the clarity of React's unidirectional data flow with the convenience of global reactive state.
 
+---
+
+## State Persistence Model
+
+### The Key Difference: Ephemeral vs Persistent State
+
+Rise's state system uses **persistent reactive state** that survives across logic flow executions:
+
+```javascript
+// ❌ Traditional (ephemeral - state dies after function)
+function handleClick() {
+  let toggle = true;  // Dies when function ends
+  showMenu();
+}
+
+// ✅ Rise (persistent - state lives throughout page session)
+Page State: { toggle: false }
+
+Logic Flow A: [Button Click] → [Set toggle = true]
+                                     ↓
+                          State persists globally
+                                     ↓
+Logic Flow B: [Button Click Again] → [Read toggle] → "It's true, toggle it off"
+```
+
+**Benefits**:
+- Multiple independent logic flows can coordinate through shared state
+- Components automatically react to state changes
+- State survives across logic flow executions
+- No need for complex flow-to-flow connections
+
+### State Scopes
+
+Rise provides three levels of state scope:
+
+#### 1. **App-Level State** (global, persists across pages)
+- User authentication
+- Theme preferences
+- Shopping cart
+- Global settings
+
+#### 2. **Page-Level State** (persists while page mounted)
+- Form data
+- UI toggles (dropdowns, modals)
+- Filters, search terms
+- Validation errors
+
+#### 3. **Component-Level State** (local to instance)
+- Input focus
+- Hover state
+- Animation progress
+
+See [LOGIC_SYSTEM.md](./LOGIC_SYSTEM.md) for complete implementation details.
+
+### State Lifecycle
+
+**Page State:**
+1. **Page Mount**: State initialized with defaults from manifest
+2. **Logic Flows Execute**: Read and write state values
+3. **Components React**: Auto-update when state changes
+4. **Logic Flows Re-execute**: Can read updated state
+5. **Page Unmount**: State destroyed (unless app-level)
+
+**State Generation:**
+
+Generated Zustand store from manifest:
+
+```typescript
+// From manifest state definition
+{
+  "state": {
+    "authMode": { "type": "string", "default": "signup" },
+    "email": { "type": "string", "default": "" }
+  }
+}
+
+// Generated code
+import { create } from 'zustand';
+
+export const usePageState = create((set, get) => ({
+  authMode: 'signup',
+  email: '',
+  
+  setAuthMode: (mode) => set({ authMode: mode }),
+  setEmail: (email) => set({ email }),
+  toggleAuthMode: () => set({ 
+    authMode: get().authMode === 'login' ? 'signup' : 'login' 
+  }),
+  
+  reset: () => set({ authMode: 'signup', email: '' })
+}));
+```
+
+---
+
 ## The Three Data Flow Patterns
 
 ### 1. Props Down (Parent → Child)

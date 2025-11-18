@@ -243,18 +243,23 @@ class Level1SchemaValidator {
 ## Level 2: Enhanced Schema (Weeks 13-24)
 
 ### Goal
-**Add interactivity**: Events, state, expressions, computed properties
+**Add interactivity**: Events, state, expressions, and node-based logic flows
 
 ### New Features
 
-#### ✅ Expressions
+Adds computed values, persistent reactive state, and node-based logic:
+
+#### ✅ Expression System
+
+Template expressions in properties: `{{ state.value }}`
+
 ```json
 {
   "properties": {
     "displayText": {
       "type": "expression",
-      "expression": "props.user.firstName + ' ' + props.user.lastName",
-      "dependencies": ["props.user.firstName", "props.user.lastName"],
+      "expression": "{{ state.authMode === 'login' ? 'Log In' : 'Sign Up' }}",
+      "dependencies": ["state.authMode"],
       "author": "user",
       "userEditable": true
     }
@@ -262,96 +267,115 @@ class Level1SchemaValidator {
 }
 ```
 
-**Security Requirements**:
-- Must pass SECURITY_SPEC.md validation
-- Sandboxed execution (VM2)
+**Features**:
+- Computed properties with automatic dependencies
+- Expression validation and type checking
+- Security sandboxing (VM2)
 - AST parsing and checking
 - Timeout protection (100ms)
 
+#### ✅ Logic System
+
+Node-based visual logic canvas (React Flow):
+
+**Key Features**:
+- Persistent reactive state (page-level, app-level)
+- Event triggers (onClick, onChange, onMount, etc.)
+- Logic flows with state nodes, API nodes, action nodes
+- Independent flows that share state
+- Visual debugging and execution traces
+
+**State Persistence**:
+Unlike ephemeral function-local state, Rise's state **persists throughout the page session**:
+
+```javascript
+// Traditional approach (state dies after function)
+function handleClick() {
+  let toggle = true;  // Dies when function ends
+}
+
+// Rise approach (state persists)
+Page State: { toggle: false }
+Logic Flow A: [Button Click] → [Set toggle = true]
+Logic Flow B: [Button Click Again] → [Read toggle] → "It's true!"
+```
+
+**Benefits**:
+- Multiple independent logic flows can coordinate through shared state
+- Components automatically react to state changes
+- State survives across logic flow executions
+- No need for complex flow-to-flow connections
+
 #### ✅ State Management
+
+**Page-level state** (persists while page mounted):
+- Form data
+- UI toggles (dropdowns, modals)
+- Filters, search terms
+- Validation errors
+
+**App-level state** (persists across pages):
+- User authentication
+- Theme preferences
+- Shopping cart
+- Global settings
+
+**Component-level state** (local to instance):
+- Input focus
+- Hover state
+- Animation progress
+
+**Generated Zustand stores** for reactivity:
+
 ```json
 {
-  "localState": {
-    "isExpanded": {
-      "type": "boolean",
-      "default": false,
-      "exposed": false
-    }
-  },
-  
-  "globalState": {
-    "currentUser": {
-      "type": "reactive",
-      "dataType": "object",
-      "default": null
-    }
-  }
-}
-```
-
-**Implementation**:
-- Local state: `useState` hooks
-- Global state: Zustand store (auto-generated)
-
-#### ✅ Event Handlers
-```json
-{
-  "eventHandlers": {
-    "onClick": {
-      "action": "setState",
-      "target": "isExpanded",
-      "value": "!state.isExpanded"
+  "state": {
+    "authMode": {
+      "type": "string",
+      "default": "signup",
+      "scope": "page"
     },
-    
-    "onSubmit": {
-      "action": "custom",
-      "code": "handleSubmit(props.formData)"
+    "email": {
+      "type": "string",
+      "default": "",
+      "scope": "page"
     }
   }
 }
 ```
 
-**Supported Actions**:
-- `setState`: Update local state
-- `setGlobal`: Update global state
-- `navigate`: Change route
-- `custom`: User-defined function
+Generates:
 
-#### ✅ Computed Properties
-```json
-{
-  "computedProperties": {
-    "fullName": {
-      "expression": "props.user.firstName + ' ' + props.user.lastName",
-      "memoize": true
-    }
-  }
-}
+```javascript
+import { create } from 'zustand';
+
+export const usePageState = create((set, get) => ({
+  authMode: 'signup',
+  email: '',
+  
+  setAuthMode: (mode) => set({ authMode: mode }),
+  setEmail: (email) => set({ email }),
+  toggleAuthMode: () => set({ 
+    authMode: get().authMode === 'login' ? 'signup' : 'login' 
+  }),
+  
+  reset: () => set({ authMode: 'signup', email: '' })
+}));
 ```
 
-**Implementation**:
-- Uses `useMemo` for performance
-- Auto-detects dependencies
+#### ✅ Data Flow
 
-#### ✅ Global Functions
-```json
-{
-  "globalFunctions": {
-    "user.formatTimeAgo": {
-      "namespace": "user",
-      "name": "formatTimeAgo",
-      "code": "function formatTimeAgo(date) { ... }",
-      "parameters": [{"name": "date", "type": "Date|string"}],
-      "returns": "string"
-    }
-  }
-}
-```
+**Components → Logic** (events):
+- User interactions trigger logic flows
+- `onClick`, `onChange`, `onMount`, etc.
 
-**Features**:
-- Namespaced to prevent collisions
-- Reusable across components
-- Can be tested independently
+**Logic → Components** (data binding, actions):
+- Template expressions: `{{ state.authMode }}`
+- Direct actions: `Toast.show()`, `Navigate`, `Focus`
+
+**Logic ↔ State** (read/write persistent variables):
+- State nodes: Get State, Set State, Toggle State
+- Automatic component re-rendering on state changes
 
 ### Generated Code Example (Level 2)
 

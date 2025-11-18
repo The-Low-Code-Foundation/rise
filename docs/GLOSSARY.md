@@ -136,6 +136,72 @@ User-defined reusable function available everywhere:
 
 ---
 
+## Logic System Terms (Schema Level 2+)
+
+### **Logic Canvas**
+Visual node-based editor for creating interactive logic. Similar to Noodl's node graph or Unreal's Blueprints. Uses React Flow library.
+
+### **Logic Flow**
+A connected sequence of logic nodes that executes in response to a trigger (event, page load, timer, etc.). Each flow becomes a generated function.
+
+### **Logic Node**
+Individual unit of logic in the canvas. Types include:
+- **State Nodes**: Get/Set/Toggle state
+- **Logic Nodes**: If/Else, Switch, Loop
+- **API Nodes**: HTTP Request, Parse JSON
+- **Action Nodes**: Navigate, Show Toast, Focus
+- **Data Nodes**: Get URL Param, Local Storage
+
+### **Persistent Reactive State**
+State that survives across logic flow executions and automatically triggers component re-renders. Unlike ephemeral function-local variables.
+
+```javascript
+// Ephemeral state (dies after function)
+function handler() {
+  let toggle = true;  // Lost when function ends
+}
+
+// Persistent state (survives)
+Page State: { toggle: false }
+Logic Flow A: Sets toggle = true
+Logic Flow B: Reads toggle (still true!)
+```
+
+### **State Scope**
+The lifetime and visibility of state variables:
+- **App-Level**: Persists across pages (authentication, theme, cart)
+- **Page-Level**: Persists while page mounted (form data, UI toggles)
+- **Component-Level**: Local to component instance (hover, focus)
+
+### **Event Trigger**
+What causes a logic flow to execute:
+- **Component Events**: onClick, onChange, onMount, etc.
+- **Page Events**: Page Load, Page Unload
+- **Custom Events**: User-defined events fired by logic
+- **Timer Events**: Delayed or recurring execution
+
+### **Node Connection**
+Visual wire connecting one node's output to another's input. Determines execution order and data flow.
+
+### **Execution Context**
+The runtime environment when a logic flow executes, including:
+- Current state values
+- Event data (click position, input value, etc.)
+- Previous node outputs
+- Component references
+
+### **State Inspector**
+Debugging tool that shows current state values, change history, and which components/flows are reading/writing each variable.
+
+### **Execution Trace**
+Debug view showing the execution path of a logic flow, including:
+- Which nodes executed
+- Execution duration
+- Input/output values
+- Errors encountered
+
+---
+
 ## Data Flow Terms
 
 ### **Binding**

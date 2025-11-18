@@ -56,8 +56,9 @@ The MVP focuses on **proven core value**: Visual editor → clean code → worki
 
 **Deferred to Post-MVP** (see [SCHEMA_LEVELS.md](./docs/SCHEMA_LEVELS.md)):
 - ❌ Expressions & computed properties (Level 2)
-- ❌ State management (Level 2)
-- ❌ Event handlers (Level 2)
+- ❌ Logic system with node-based editor (Level 2)
+- ❌ Persistent reactive state management (Level 2)
+- ❌ Event handlers with visual logic flows (Level 2)
 - ❌ Data connections / Database (Level 3)
 - ❌ Real-time features (Level 3)
 - ❌ AI code review (Level 3)
@@ -68,6 +69,14 @@ The MVP focuses on **proven core value**: Visual editor → clean code → worki
 
 **Why this scope?**  
 Focused MVP allows us to ship in 14-18 weeks instead of 6+ months, get real user feedback, and build a solid foundation for advanced features.
+
+**Logic System (Level 2)**:
+- Node-based visual logic editor (React Flow)
+- Persistent reactive state (page-level, app-level)
+- Event triggers and logic flows
+- State nodes, API nodes, action nodes
+- Visual debugging and execution traces
+- See [LOGIC_SYSTEM.md](./docs/LOGIC_SYSTEM.md)
 
 ---
 

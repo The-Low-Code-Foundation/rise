@@ -71,6 +71,7 @@ This tool is built on three core principles:
 
 ### Visualization
 - **Component Graph**: React Flow
+- **Logic Canvas**: React Flow (node-based logic editor)
 - **File Tree**: react-arborist
 - **Preview**: Embedded Vite dev server in Electron webview
 
@@ -153,7 +154,62 @@ interface ReverseEngineer {
 
 **Uses**: Babel AST parsing + AI assistance for ambiguous cases
 
-### 5. Debug Runtime
+### 5. Logic System (Schema Level 2+)
+
+**Responsibility**: Visual node-based logic with persistent reactive state
+
+```typescript
+interface LogicSystem {
+  // State management
+  createStateStore(stateDefinition: StateDefinition): ZustandStore;
+  
+  // Logic flow execution
+  executeFlow(flowId: string, trigger: Event): Promise<void>;
+  
+  // Node execution
+  executeNode(node: LogicNode, context: ExecutionContext): Promise<any>;
+  
+  // State access
+  getState(variable: string, scope: 'page' | 'app'): any;
+  setState(variable: string, value: any, scope: 'page' | 'app'): void;
+  
+  // Debugging
+  traceExecution(flowId: string): ExecutionTrace;
+  getStateHistory(): StateChange[];
+}
+
+interface LogicNode {
+  id: string;
+  type: NodeType;
+  config: Record<string, any>;
+  position: { x: number; y: number };
+}
+
+type NodeType = 
+  | 'getState' | 'setState' | 'toggleState'
+  | 'ifElse' | 'switch' | 'loop'
+  | 'httpRequest' | 'parseJson'
+  | 'navigate' | 'showToast' | 'focus'
+  | 'getUrlParam' | 'localStorage'
+  | 'custom';
+```
+
+**Implementation:**
+- React Flow for visual node canvas
+- Zustand for state management
+- Topological sort for node execution order
+- Code generation from logic flows to JavaScript functions
+
+**Key Features:**
+- Persistent reactive state (page-level, app-level)
+- Independent logic flows sharing state
+- Visual debugging with execution traces
+- State inspector with change history
+- Breakpoints and step-through debugging
+
+See [LOGIC_SYSTEM.md](./LOGIC_SYSTEM.md) for detailed design.
+
+### 6. Debug Runtime
 
 **Responsibility**: Instrument generated code for step-through debugging
 
