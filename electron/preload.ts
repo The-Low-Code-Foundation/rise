@@ -39,17 +39,44 @@ export interface ElectronAPI {
   // Application info
   getVersion: () => Promise<string>;
   
-  // File operations (to be implemented in Task 1.3)
+  // Project creation (Task 1.3A)
+  createProject: (params: CreateProjectParams) => Promise<{ success: boolean; project?: any; error?: string }>;
+  onInstallProgress: (callback: (progress: InstallProgress) => void) => () => void;
+  
+  // Project management (Task 1.3B)
+  openFolderDialog: () => Promise<string | undefined>;
+  openProject: (path: string) => Promise<{ success: boolean; project?: any; error?: string }>;
+  getRecentProjects: () => Promise<{ success: boolean; projects?: any[]; error?: string }>;
+  getCurrentProject: () => Promise<{ success: boolean; project?: any }>;
+  getProjectSettings: (path: string) => Promise<{ success: boolean; settings?: any; error?: string }>;
+  updateProjectSettings: (path: string, settings: any) => Promise<{ success: boolean; error?: string }>;
+  
+  // File tree operations (Task 1.3A)
+  getProjectFiles: (dirPath: string) => Promise<{ success: boolean; files?: any[]; error?: string }>;
+  selectDirectory: () => Promise<string | null>;
+  
+  // File operations (to be implemented in future tasks)
   // readFile: (filepath: string) => Promise<string>;
   // writeFile: (filepath: string, content: string) => Promise<void>;
-  
-  // Project management (to be implemented in Task 1.3)
-  // createProject: (name: string, location: string) => Promise<{ success: boolean; path: string }>;
-  // openProject: (path: string) => Promise<{ success: boolean; manifest: any }>;
-  
-  // Event listeners (one-way communication from main to renderer)
   // onFileChanged: (callback: (filepath: string) => void) => void;
   // onProjectError: (callback: (error: string) => void) => void;
+}
+
+/**
+ * Type imports for API signatures
+ */
+interface CreateProjectParams {
+  name: string;
+  location: string;
+  framework: 'react';
+  template: 'basic';
+  initGit?: boolean;
+}
+
+interface InstallProgress {
+  step: string;
+  progress: number;
+  message: string;
 }
 
 /**
@@ -69,16 +96,38 @@ const electronAPI: ElectronAPI = {
   // Get app version
   getVersion: () => ipcRenderer.invoke('get-version'),
   
-  // File operations will be added in Task 1.3
+  // Project creation (Task 1.3A)
+  createProject: (params: CreateProjectParams) => 
+    ipcRenderer.invoke('project:create', params),
+  
+  onInstallProgress: (callback: (progress: InstallProgress) => void) => {
+    // Set up listener for progress events
+    const listener = (_event: any, progress: InstallProgress) => callback(progress);
+    ipcRenderer.on('project:install-progress', listener);
+    
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('project:install-progress', listener);
+    };
+  },
+  
+  // Project management (Task 1.3B)
+  openFolderDialog: () => ipcRenderer.invoke('dialog:open-folder'),
+  openProject: (path: string) => ipcRenderer.invoke('project:open', path),
+  getRecentProjects: () => ipcRenderer.invoke('project:get-recent'),
+  getCurrentProject: () => ipcRenderer.invoke('project:get-current'),
+  getProjectSettings: (path: string) => ipcRenderer.invoke('project:get-settings', path),
+  updateProjectSettings: (path: string, settings: any) => 
+    ipcRenderer.invoke('project:update-settings', path, settings),
+  
+  // File tree operations (Task 1.3A)
+  getProjectFiles: (dirPath: string) => ipcRenderer.invoke('project:get-files', dirPath),
+  selectDirectory: () => ipcRenderer.invoke('dialog:select-directory'),
+  
+  // File operations will be added in future tasks
   // readFile: (filepath: string) => ipcRenderer.invoke('read-file', filepath),
   // writeFile: (filepath: string, content: string) => 
   //   ipcRenderer.invoke('write-file', filepath, content),
-  
-  // Project management will be added in Task 1.3
-  // createProject: (name: string, location: string) =>
-  //   ipcRenderer.invoke('create-project', name, location),
-  // openProject: (path: string) => 
-  //   ipcRenderer.invoke('open-project', path),
   
   // Event listeners will be added as needed
   // onFileChanged: (callback: (filepath: string) => void) => {

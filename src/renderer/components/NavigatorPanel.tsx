@@ -1,31 +1,31 @@
 /**
  * @file NavigatorPanel.tsx
- * @description Left navigator panel with component tree and file explorer
+ * @description Left navigator panel with project info and file explorer
  * 
- * @architecture Phase 1, Task 1.2 - Three-Panel Layout
+ * @architecture Phase 1, Task 1.2 - Three-Panel Layout (updated Task 1.3A)
  * @created 2025-11-19
+ * @updated 2025-11-19
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Professional placeholder, implementation in Phase 2
+ * @confidence 9/10 - Integrated with file tree and project store
  * 
  * PROBLEM SOLVED:
- * - Provides visual structure for future navigator functionality
- * - Shows users what will be available in this panel
- * - Professional appearance maintains user confidence
+ * - Display current project information
+ * - Show project file structure with file tree
+ * - Provide empty state when no project is open
+ * - Quick action to create new project
  * 
  * SOLUTION:
- * - Informative placeholder with mockup of future UI
- * - Clear "Coming Soon" indicators
- * - Visual hierarchy matching final design
+ * - Project info section (name, path)
+ * - File tree with lazy loading
+ * - Empty state with CTA button
+ * - Integration with projectStore
  * 
- * PLACEHOLDER for Task 2.1 - Component Tree UI
+ * SECTIONS:
+ * - PROJECT INFO: Current project name and path
+ * - FILES: Expandable file tree
+ * - EMPTY STATE: Shown when no project open
  * 
- * WILL CONTAIN:
- * - Component tree view (react-arborist)
- * - File explorer
- * - Search and filter functionality
- * - Drag and drop support
- * 
- * @performance O(1) render - static content only
+ * @performance O(1) for panel, O(n) for file tree where n = visible nodes
  * @security-critical false
  * @performance-critical false
  */
@@ -33,16 +33,18 @@
 import React from 'react';
 import { 
   FolderIcon, 
-  DocumentIcon,
-  ChevronRightIcon,
-  MagnifyingGlassIcon 
+  PlusIcon,
 } from '@heroicons/react/24/outline';
+import { useProjectStore } from '../store/projectStore';
+import { FileTree } from './FileTree/FileTree';
 
 /**
- * Navigator Panel component (placeholder)
+ * Navigator Panel component
  * 
- * Left sidebar that will contain the component tree and file explorer.
- * Currently shows a professional placeholder indicating future functionality.
+ * Left sidebar that displays:
+ * - Current project information (when project is open)
+ * - File explorer with expandable tree
+ * - Empty state with action button (when no project)
  * 
  * @returns NavigatorPanel component
  * 
@@ -54,6 +56,53 @@ import {
  * ```
  */
 export function NavigatorPanel() {
+  // Get current project from store
+  const currentProject = useProjectStore((state) => state.currentProject);
+  const openDialog = useProjectStore((state) => state.openDialog);
+
+  // No project open - show empty state
+  if (!currentProject) {
+    return (
+      <div
+        className="h-full flex flex-col items-center justify-center bg-gray-50 px-6"
+        data-panel-id="navigator"
+      >
+        {/* Empty State */}
+        <div className="max-w-sm text-center">
+          {/* Icon */}
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <FolderIcon className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+
+          {/* Text */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Project Open
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">
+            Create a new project or open an existing one to get started with Rise.
+          </p>
+
+          {/* Action Button */}
+          <button
+            onClick={openDialog}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Create New Project
+          </button>
+
+          {/* Hint */}
+          <p className="mt-4 text-xs text-gray-500">
+            Or use <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-gray-700">Cmd+N</kbd> to create a new project
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Project is open - show project info and file tree
   return (
     <div
       className="h-full flex flex-col bg-gray-50"
@@ -61,105 +110,36 @@ export function NavigatorPanel() {
       tabIndex={-1}
     >
       {/* Panel Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-gray-200 bg-white">
         <h2 className="text-sm font-semibold text-gray-900">Navigator</h2>
-        {/* Search icon - placeholder */}
-        <button
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-50"
-          disabled
-          title="Search (Coming Soon)"
-        >
-          <MagnifyingGlassIcon className="w-4 h-4 text-gray-500" />
-        </button>
       </div>
 
-      {/* Panel Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
-        <div className="space-y-6">
-          {/* Component Tree Section */}
-          <section>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Component Tree
-            </h3>
-            
-            {/* Mock tree structure to show what's coming */}
-            <div className="space-y-0.5">
-              {/* Root node */}
-              <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100 cursor-pointer">
-                <ChevronRightIcon className="w-3.5 h-3.5 text-gray-400" />
-                <FolderIcon className="w-4 h-4 text-blue-500" />
-                <span className="font-medium text-gray-700">App Root</span>
-              </div>
-              
-              {/* Child nodes - indented */}
-              <div className="ml-5 space-y-0.5 opacity-75">
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100">
-                  <DocumentIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">Header</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100">
-                  <ChevronRightIcon className="w-3.5 h-3.5 text-gray-400" />
-                  <FolderIcon className="w-4 h-4 text-blue-400" />
-                  <span className="text-gray-600">Main Content</span>
-                </div>
-                <div className="ml-5 space-y-0.5 opacity-75">
-                  <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100">
-                    <DocumentIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">Hero Section</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100">
-                    <DocumentIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">Features Grid</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded hover:bg-gray-100">
-                  <DocumentIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">Footer</span>
-                </div>
-              </div>
-            </div>
-
-            {/* "Coming Soon" badge */}
-            <div className="mt-3 px-2 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 italic">
-              🚧 Interactive tree coming in Phase 2 - Task 2.1
-            </div>
-          </section>
-
-          {/* File Explorer Section */}
-          <section>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Files
-            </h3>
-            
-            {/* Mock file structure */}
-            <div className="space-y-0.5 opacity-50">
-              <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded">
-                <FolderIcon className="w-4 h-4 text-yellow-500" />
-                <span className="text-gray-600">src/</span>
-              </div>
-              <div className="ml-5">
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded">
-                  <FolderIcon className="w-4 h-4 text-yellow-500" />
-                  <span className="text-gray-600">components/</span>
-                </div>
-              </div>
-            </div>
-
-            {/* "Coming Soon" badge */}
-            <div className="mt-3 px-2 py-1.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 italic">
-              🚧 File explorer coming in Task 1.3
-            </div>
-          </section>
-
-          {/* Info box */}
-          <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg">
-            <p className="text-xs text-gray-600 leading-relaxed">
-              <strong className="text-gray-900">Navigator Panel</strong>
-              <br />
-              Browse your component hierarchy, search for elements, and manage your project structure.
+      {/* Panel Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        {/* Project Info Section */}
+        <section className="p-4 border-b border-gray-200 bg-white">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+            Project
+          </h3>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {currentProject.name}
+            </p>
+            <p className="text-xs text-gray-500 truncate mt-0.5" title={currentProject.path}>
+              {currentProject.path}
             </p>
           </div>
-        </div>
+        </section>
+
+        {/* Files Section */}
+        <section className="p-4">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+            Files
+          </h3>
+          
+          {/* File Tree */}
+          <FileTree projectPath={currentProject.path} />
+        </section>
       </div>
     </div>
   );

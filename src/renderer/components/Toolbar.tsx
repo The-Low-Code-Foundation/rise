@@ -2,10 +2,11 @@
  * @file Toolbar.tsx
  * @description Top toolbar with action buttons for common operations
  * 
- * @architecture Phase 1, Task 1.2 - Three-Panel Layout
+ * @architecture Phase 1, Task 1.2 - Three-Panel Layout (updated Task 1.3A)
  * @created 2025-11-19
+ * @updated 2025-11-19
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Standard toolbar component with placeholder actions
+ * @confidence 9/10 - Toolbar with working New Project button
  * 
  * PROBLEM SOLVED:
  * - Provides quick access to common application actions
@@ -22,9 +23,9 @@
  * <Toolbar />
  * ```
  * 
- * ACTIONS (PLACEHOLDERS):
- * - New Project: Coming in Task 1.3
- * - Open Project: Coming in Task 1.3
+ * ACTIONS:
+ * - New Project: ✅ Opens new project dialog (Task 1.3A)
+ * - Open Project: Coming in Task 1.3B
  * - Save: Coming in Phase 2+
  * - Undo/Redo: Coming in Phase 2+
  * - Settings: Coming in Phase 3+
@@ -42,6 +43,7 @@ import {
   ArrowUturnRightIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
+import { useProjectStore } from '../store/projectStore';
 
 /**
  * Props for individual toolbar button
@@ -97,8 +99,8 @@ function ToolbarButton({
  * Toolbar component with application actions
  * 
  * Displays a horizontal toolbar at the top of the application with
- * common action buttons. Most buttons are disabled placeholders that
- * will be implemented in future tasks.
+ * common action buttons. "New Project" button is now functional and
+ * opens the project creation dialog.
  * 
  * LAYOUT:
  * - Left: Primary actions (New, Open)
@@ -116,6 +118,9 @@ function ToolbarButton({
  * ```
  */
 export function Toolbar() {
+  // Get openDialog action from project store
+  const openDialog = useProjectStore((state) => state.openDialog);
+
   return (
     <div
       className="
@@ -132,8 +137,8 @@ export function Toolbar() {
           icon={<PlusIcon className="w-5 h-5" />}
           label="New Project"
           shortcut="Cmd+N"
-          onClick={() => console.log('New Project - Coming in Task 1.3')}
-          disabled={true}
+          onClick={openDialog}
+          disabled={false}
         />
         <ToolbarButton
           icon={<FolderOpenIcon className="w-5 h-5" />}

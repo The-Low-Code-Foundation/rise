@@ -256,8 +256,8 @@ app.whenReady().then(async () => {
   // Set up error handlers first
   setupErrorHandlers();
 
-  // Set up IPC handlers
-  setupIpcHandlers();
+  // Set up IPC handlers (now async for ProjectManager initialization)
+  await setupIpcHandlers();
 
   // Create application menu
   createApplicationMenu();
