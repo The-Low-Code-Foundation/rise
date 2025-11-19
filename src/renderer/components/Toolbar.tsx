@@ -118,8 +118,9 @@ function ToolbarButton({
  * ```
  */
 export function Toolbar() {
-  // Get openDialog action from project store
+  // Get dialog actions from project store
   const openDialog = useProjectStore((state) => state.openDialog);
+  const openOpenDialog = useProjectStore((state) => state.openOpenDialog);
 
   return (
     <div
@@ -144,8 +145,8 @@ export function Toolbar() {
           icon={<FolderOpenIcon className="w-5 h-5" />}
           label="Open"
           shortcut="Cmd+O"
-          onClick={() => console.log('Open - Coming in Task 1.3')}
-          disabled={true}
+          onClick={openOpenDialog}
+          disabled={false}
         />
       </div>
 

@@ -29,6 +29,7 @@
 import React, { useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { NewProjectDialog } from './components/NewProjectDialog';
+import { OpenProjectDialog } from './components/OpenProjectDialog';
 import { useProjectStore } from './store/projectStore';
 
 /**
@@ -48,12 +49,14 @@ import { useProjectStore } from './store/projectStore';
  * 
  * KEYBOARD SHORTCUTS:
  * - Cmd/Ctrl+N: New Project
+ * - Cmd/Ctrl+O: Open Project
  * 
  * @returns App component with complete layout and dialogs
  */
 function App() {
-  // Get openDialog action from project store
+  // Get dialog actions from project store
   const openDialog = useProjectStore((state) => state.openDialog);
+  const openOpenDialog = useProjectStore((state) => state.openOpenDialog);
 
   /**
    * Handle global keyboard shortcuts
@@ -65,6 +68,12 @@ function App() {
         e.preventDefault();
         openDialog();
       }
+      
+      // Cmd+O / Ctrl+O - Open Project
+      if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+        e.preventDefault();
+        openOpenDialog();
+      }
     };
 
     // Add event listener
@@ -74,12 +83,13 @@ function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [openDialog]);
+  }, [openDialog, openOpenDialog]);
 
   return (
     <>
       <Layout />
       <NewProjectDialog />
+      <OpenProjectDialog />
     </>
   );
 }

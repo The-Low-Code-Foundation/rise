@@ -1,31 +1,28 @@
 /**
  * @file PropertiesPanel.tsx
- * @description Right properties panel for editing component properties
+ * @description Right properties panel for editing component properties and project settings
  * 
- * @architecture Phase 1, Task 1.2 - Three-Panel Layout
+ * @architecture Phase 1, Task 1.2 - Three-Panel Layout (updated Task 1.3B)
  * @created 2025-11-19
+ * @updated 2025-11-19
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Professional placeholder, implementation in Phase 2
+ * @confidence 9/10 - Shows settings when project open, placeholder otherwise
  * 
  * PROBLEM SOLVED:
  * - Provides visual structure for future property editor
- * - Shows users what will be available in this panel
+ * - Shows project settings when no component selected
  * - Professional appearance maintains user confidence
  * 
  * SOLUTION:
+ * - Shows ProjectSettings when project is open
  * - Informative placeholder with mockup of future UI
- * - Clear "Coming Soon" indicators
- * - Visual hierarchy matching final design
+ * - Clear "Coming Soon" indicators for component editing
  * 
- * PLACEHOLDER for Phase 2 - Task 2.3 - Property Editor
+ * CURRENT STATE (Task 1.3B):
+ * - ✅ Shows project settings when project open, no component selected
+ * - 🔵 Component property editing coming in Phase 2 - Task 2.3
  * 
- * WILL CONTAIN:
- * - Component property editor forms
- * - Style editor (CSS properties)
- * - Event handler configuration
- * - Component metadata display
- * 
- * @performance O(1) render - static content only
+ * @performance O(1) render - delegates to child components
  * @security-critical false
  * @performance-critical false
  */
@@ -37,12 +34,16 @@ import {
   BoltIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
+import { useProjectStore } from '../store/projectStore';
+import { ProjectSettings } from './ProjectSettings';
 
 /**
- * Properties Panel component (placeholder)
+ * Properties Panel component
  * 
- * Right sidebar that will contain the property editor for selected components.
- * Currently shows a professional placeholder indicating future functionality.
+ * Right sidebar that shows:
+ * - Project settings when project is open and no component selected (Task 1.3B)
+ * - Component property editor when component selected (Phase 2)
+ * - Placeholder when no project is open
  * 
  * @returns PropertiesPanel component
  * 
@@ -54,6 +55,12 @@ import {
  * ```
  */
 export function PropertiesPanel() {
+  // Get current project from store
+  const currentProject = useProjectStore((state) => state.currentProject);
+  
+  // TODO: Get selected component when implementing Phase 2
+  const selectedComponent = null;
+  
   return (
     <div
       className="h-full flex flex-col bg-gray-50"
@@ -66,22 +73,45 @@ export function PropertiesPanel() {
       </div>
 
       {/* Panel Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
-        {/* Empty state - no component selected */}
-        <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
-            <CubeIcon className="w-8 h-8 text-gray-400" />
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        {/* Show project settings if project is open and no component selected */}
+        {currentProject && !selectedComponent ? (
+          <ProjectSettings />
+        ) : !currentProject ? (
+          // No project open - show message
+          <div className="p-4">
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
+                <CubeIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-sm text-gray-600 mb-2">
+                No project open
+              </p>
+              <p className="text-xs text-gray-400">
+                Create or open a project to get started
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 mb-2">
-            Select a component to edit properties
-          </p>
-          <p className="text-xs text-gray-400 italic">
-            Coming in Phase 2 - Task 2.3
-          </p>
-        </div>
+        ) : (
+          // Component selected - show placeholder for Phase 2
+          <div className="p-4">
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
+                <CubeIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-sm text-gray-600 mb-2">
+                Select a component to edit properties
+              </p>
+              <p className="text-xs text-gray-400 italic">
+                Coming in Phase 2 - Task 2.3
+              </p>
+            </div>
+          </div>
+        )}
 
-        {/* Preview of property editor interface */}
-        <div className="space-y-6 pointer-events-none opacity-50">
+        {/* Preview of property editor interface (only show when no project) */}
+        {!currentProject && (
+          <div className="p-4 space-y-6 pointer-events-none opacity-50">
           {/* Component Info Section */}
           <section>
             <div className="flex items-center gap-2 mb-3">
@@ -238,16 +268,21 @@ export function PropertiesPanel() {
               </div>
             </div>
           </section>
-        </div>
+          </div>
+        )}
 
-        {/* Info box */}
-        <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-xs text-blue-900 leading-relaxed">
-            <strong>Properties Panel</strong>
-            <br />
-            Edit component properties, styles, and event handlers. Full property editor coming in Phase 2 - Task 2.3.
-          </p>
-        </div>
+        {/* Info box (only show when no project) */}
+        {!currentProject && (
+          <div className="p-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-900 leading-relaxed">
+                <strong>Properties Panel</strong>
+                <br />
+                Edit component properties, styles, and event handlers. Full property editor coming in Phase 2 - Task 2.3.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

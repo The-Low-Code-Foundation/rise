@@ -82,10 +82,13 @@ interface ProjectState {
   currentProject: Project | null;
   recentProjects: RecentProject[];
   
-  // ===== Dialog State =====
+  // ===== New Project Dialog State =====
   isDialogOpen: boolean;
   dialogStep: DialogStep;
   currentStep: DialogStep; // Alias for dialogStep
+  
+  // ===== Open Project Dialog State =====
+  isOpenDialogOpen: boolean;
   
   // ===== Form Data =====
   projectName: string;
@@ -100,7 +103,7 @@ interface ProjectState {
   error: string | null;
   nameValidationError: string | null;
   
-  // ===== Dialog Actions =====
+  // ===== New Project Dialog Actions =====
   openDialog: () => void;
   closeDialog: () => void;
   resetDialog: () => void;
@@ -108,6 +111,11 @@ interface ProjectState {
   nextStep: () => void;
   prevStep: () => void;
   validateAndNextStep: () => void; // Validate and advance to next step
+  
+  // ===== Open Project Dialog Actions =====
+  openOpenDialog: () => void;
+  closeOpenDialog: () => void;
+  openExistingProject: (projectPath: string) => Promise<boolean>;
   
   // ===== Form Actions =====
   setProjectName: (name: string) => void;
@@ -193,6 +201,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   isDialogOpen: false,
   dialogStep: DialogStep.NAME,
   currentStep: DialogStep.NAME,
+  
+  isOpenDialogOpen: false,
   
   projectName: '',
   projectLocation: getDefaultLocation(),
@@ -520,6 +530,62 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
    */
   setCurrentProject: (project: Project | null) => {
     set({ currentProject: project });
+  },
+  
+  // ===== Open Project Dialog Actions =====
+  
+  /**
+   * Open the "Open Project" dialog
+   * Loads recent projects automatically
+   */
+  openOpenDialog: () => {
+    set({ isOpenDialogOpen: true });
+    // Load recent projects will be called by the dialog component
+  },
+  
+  /**
+   * Close the "Open Project" dialog
+   */
+  closeOpenDialog: () => {
+    set({ isOpenDialogOpen: false });
+  },
+  
+  /**
+   * Open an existing project from a path
+   * 
+   * WORKFLOW:
+   * 1. Call IPC to load project
+   * 2. Validate project structure
+   * 3. Load manifest and settings
+   * 4. Set as current project
+   * 5. Add to recent projects
+   * 
+   * @param projectPath - Absolute path to project directory
+   * @returns Promise<boolean> - true if successful, false otherwise
+   * @async
+   */
+  openExistingProject: async (projectPath: string): Promise<boolean> => {
+    try {
+      // Call IPC to open project
+      const result = await electronAPI.openProject(projectPath);
+      
+      if (result.success && result.project) {
+        // Success! Set as current project
+        set({ currentProject: result.project });
+        
+        // Reload recent projects to include this one
+        await get().loadRecentProjects();
+        
+        return true;
+      } else {
+        // Failed - error message is in result.error
+        console.error('[ProjectStore] Failed to open project:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('[ProjectStore] Error opening project:', error);
+      return false;
+    }
   },
 }));
 
