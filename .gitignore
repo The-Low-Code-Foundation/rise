@@ -15,6 +15,7 @@ pnpm-debug.log*
 # Build Output (TypeScript Compilation)
 # ============================================
 dist/
+dist-electron/
 build/
 *.tsbuildinfo
 

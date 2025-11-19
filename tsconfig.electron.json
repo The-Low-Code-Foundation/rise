@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* Electron main process runs in Node.js */
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "moduleResolution": "node",
+    
+    /* Output */
+    "outDir": "./dist-electron",
+    "rootDir": "./electron",
+    
+    /* Electron specific */
+    "types": ["node"],
+    
+    /* Emit */
+    "sourceMap": true,
+    "declaration": false
+  },
+  "include": [
+    "electron/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-electron",
+    "src"
+  ]
+}
