@@ -37,6 +37,7 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { enableMapSet } from 'immer';
 import {
   Manifest,
   ManifestState,
@@ -51,6 +52,9 @@ import {
   createComponentMetadata,
 } from '../../core/manifest/types';
 import { useProjectStore } from './projectStore';
+
+// Enable Immer support for Map and Set
+enableMapSet();
 
 /**
  * Maximum component nesting depth (5 levels = 0-4)
