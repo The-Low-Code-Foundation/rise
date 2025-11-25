@@ -30,8 +30,9 @@
  * @performance-critical true - Renders on every project load
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { TreeNode, FileTreeNode } from './TreeNode';
+import { matchesSearch } from '../../utils/searchUtils';
 
 /**
  * Props for FileTree component
@@ -39,6 +40,10 @@ import { TreeNode, FileTreeNode } from './TreeNode';
 interface FileTreeProps {
   /** Root path of the project */
   projectPath: string;
+  /** Search query for filtering files */
+  searchQuery?: string;
+  /** Callback when refresh is requested */
+  onRefreshComplete?: () => void;
 }
 
 // Get electronAPI for IPC
@@ -87,7 +92,7 @@ function sortNodes(nodes: FileTreeNode[]): FileTreeNode[] {
  * <FileTree projectPath="/Users/me/my-project" />
  * ```
  */
-export function FileTree({ projectPath }: FileTreeProps) {
+export function FileTree({ projectPath, searchQuery = '', onRefreshComplete }: FileTreeProps) {
   // Root-level files and folders
   const [rootNodes, setRootNodes] = useState<FileTreeNode[]>([]);
   
@@ -105,6 +110,9 @@ export function FileTree({ projectPath }: FileTreeProps) {
   
   // Error state
   const [error, setError] = useState<string | null>(null);
+  
+  // Track paths that match search (for auto-expand)
+  const [matchingPaths, setMatchingPaths] = useState<Set<string>>(new Set());
 
   /**
    * Load directory contents from main process
@@ -156,6 +164,142 @@ export function FileTree({ projectPath }: FileTreeProps) {
       loadRoot();
     }
   }, [projectPath]);
+
+  /**
+   * Refresh the file tree
+   * Preserves expanded state by reloading all expanded directories
+   */
+  const refreshTree = useCallback(async () => {
+    setIsLoadingRoot(true);
+    setError(null);
+    
+    try {
+      // Save current expanded paths
+      const pathsToReload = new Set(expandedPaths);
+      
+      // Reload root
+      const nodes = await loadDirectory(projectPath);
+      setRootNodes(nodes);
+      
+      // Reload all expanded directories
+      const newChildrenMap = new Map<string, FileTreeNode[]>();
+      
+      for (const path of pathsToReload) {
+        const children = await loadDirectory(path);
+        newChildrenMap.set(path, children);
+      }
+      
+      setChildrenMap(newChildrenMap);
+      
+      // Notify parent component
+      onRefreshComplete?.();
+    } catch (err) {
+      setError('Failed to refresh project files');
+      console.error(err);
+    } finally {
+      setIsLoadingRoot(false);
+    }
+  }, [projectPath, expandedPaths, onRefreshComplete]);
+
+  /**
+   * Filter nodes recursively based on search query
+   * Auto-expands parent folders containing matches
+   * 
+   * @param nodes - Nodes to filter
+   * @param parentPath - Parent directory path
+   * @returns Filtered nodes and paths to expand
+   */
+  const filterNodesRecursively = useCallback((
+    nodes: FileTreeNode[],
+    parentPath: string = projectPath
+  ): { filteredNodes: FileTreeNode[]; pathsToExpand: Set<string> } => {
+    // No search query - return all nodes
+    if (!searchQuery.trim()) {
+      return { filteredNodes: nodes, pathsToExpand: new Set() };
+    }
+    
+    const pathsToExpand = new Set<string>();
+    const filteredNodes: FileTreeNode[] = [];
+    
+    for (const node of nodes) {
+      // Check if filename matches search
+      const nodeMatches = matchesSearch(node.name, searchQuery);
+      
+      // For directories, check children recursively
+      let hasMatchingChildren = false;
+      if (node.isDirectory) {
+        const children = childrenMap.get(node.path) || [];
+        if (children.length > 0) {
+          const childResult = filterNodesRecursively(children, node.path);
+          hasMatchingChildren = childResult.filteredNodes.length > 0;
+          
+          // Add child expand paths
+          childResult.pathsToExpand.forEach(p => pathsToExpand.add(p));
+        }
+      }
+      
+      // Include node if it matches or has matching children
+      if (nodeMatches || hasMatchingChildren) {
+        filteredNodes.push(node);
+        
+        // If it has matching children, expand this directory
+        if (hasMatchingChildren) {
+          pathsToExpand.add(node.path);
+        }
+      }
+    }
+    
+    return { filteredNodes, pathsToExpand };
+  }, [searchQuery, childrenMap, projectPath]);
+
+  /**
+   * Filtered root nodes based on search query
+   * Memoized to prevent excessive re-filtering
+   */
+  const { filteredRootNodes, matchCount } = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return { filteredRootNodes: rootNodes, matchCount: 0 };
+    }
+    
+    const { filteredNodes, pathsToExpand } = filterNodesRecursively(rootNodes);
+    
+    // Update matching paths for auto-expand
+    setMatchingPaths(pathsToExpand);
+    
+    // Auto-expand folders containing matches
+    setExpandedPaths(prev => {
+      const newExpanded = new Set(prev);
+      pathsToExpand.forEach(p => newExpanded.add(p));
+      return newExpanded;
+    });
+    
+    // Count matches
+    const countMatches = (nodes: FileTreeNode[]): number => {
+      let count = 0;
+      for (const node of nodes) {
+        if (matchesSearch(node.name, searchQuery)) count++;
+        if (node.isDirectory && childrenMap.has(node.path)) {
+          count += countMatches(childrenMap.get(node.path)!);
+        }
+      }
+      return count;
+    };
+    
+    return {
+      filteredRootNodes: filteredNodes,
+      matchCount: countMatches(filteredNodes)
+    };
+  }, [rootNodes, searchQuery, filterNodesRecursively, childrenMap]);
+
+  // Expose refresh method to parent (via ref or callback)
+  useEffect(() => {
+    // Store refresh function in window for external access
+    (window as any).__fileTreeRefresh = refreshTree;
+    
+    return () => {
+      delete (window as any).__fileTreeRefresh;
+    };
+  }, [refreshTree]);
 
   /**
    * Handle node toggle (expand/collapse)
@@ -222,6 +366,8 @@ export function FileTree({ projectPath }: FileTreeProps) {
         onToggle={handleToggle}
         children={children}
         isLoading={isLoading}
+        searchQuery={searchQuery}
+        projectPath={projectPath}
       />
     );
   };
@@ -256,10 +402,32 @@ export function FileTree({ projectPath }: FileTreeProps) {
     );
   }
 
-  // Render tree
+  // No results after filtering
+  if (searchQuery.trim() && filteredRootNodes.length === 0) {
+    return (
+      <div className="p-4 text-sm text-gray-500 text-center">
+        <p className="font-medium">No results found</p>
+        <p className="text-xs mt-1">Try a different search term</p>
+      </div>
+    );
+  }
+
+  // Render tree (with search results count if searching)
+  const nodesToRender = searchQuery.trim() ? filteredRootNodes : rootNodes;
+
   return (
-    <div className="space-y-0.5">
-      {rootNodes.map((node) => renderNode(node, 0))}
+    <div>
+      {/* Search results count */}
+      {searchQuery.trim() && matchCount > 0 && (
+        <div className="px-2 py-1 text-xs text-gray-600 border-b border-gray-200 bg-blue-50">
+          {matchCount} {matchCount === 1 ? 'result' : 'results'}
+        </div>
+      )}
+      
+      {/* Tree nodes */}
+      <div className="space-y-0.5">
+        {nodesToRender.map((node) => renderNode(node, 0))}
+      </div>
     </div>
   );
 }

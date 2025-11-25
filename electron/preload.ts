@@ -55,6 +55,12 @@ export interface ElectronAPI {
   getProjectFiles: (dirPath: string) => Promise<{ success: boolean; files?: any[]; error?: string }>;
   selectDirectory: () => Promise<string | null>;
   
+  // Clipboard operations (Task 1.3C)
+  writeClipboardText: (text: string) => Promise<{ success: boolean; error?: string }>;
+  
+  // Shell operations (Task 1.3C)
+  showItemInFolder: (fullPath: string) => Promise<{ success: boolean; error?: string }>;
+  
   // File operations (to be implemented in future tasks)
   // readFile: (filepath: string) => Promise<string>;
   // writeFile: (filepath: string, content: string) => Promise<void>;
@@ -123,6 +129,12 @@ const electronAPI: ElectronAPI = {
   // File tree operations (Task 1.3A)
   getProjectFiles: (dirPath: string) => ipcRenderer.invoke('project:get-files', dirPath),
   selectDirectory: () => ipcRenderer.invoke('dialog:select-directory'),
+  
+  // Clipboard operations (Task 1.3C)
+  writeClipboardText: (text: string) => ipcRenderer.invoke('clipboard:write-text', text),
+  
+  // Shell operations (Task 1.3C)
+  showItemInFolder: (fullPath: string) => ipcRenderer.invoke('shell:show-item-in-folder', fullPath),
   
   // File operations will be added in future tasks
   // readFile: (filepath: string) => ipcRenderer.invoke('read-file', filepath),

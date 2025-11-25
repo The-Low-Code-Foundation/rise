@@ -74,6 +74,19 @@ function App() {
         e.preventDefault();
         openOpenDialog();
       }
+      
+      // Cmd+R / Ctrl+R - Refresh file tree
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault();
+        
+        // Trigger refresh via window-stored function (from FileTree)
+        const refreshFn = (window as any).__fileTreeRefresh;
+        if (refreshFn && typeof refreshFn === 'function'
+
+) {
+          refreshFn();
+        }
+      }
     };
 
     // Add event listener

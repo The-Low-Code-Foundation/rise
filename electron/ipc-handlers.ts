@@ -15,7 +15,7 @@
  * @performance-critical false
  */
 
-import { ipcMain, app, dialog, BrowserWindow } from 'electron';
+import { ipcMain, app, dialog, BrowserWindow, clipboard, shell } from 'electron';
 import { ProjectManager } from '../src/main/project/ProjectManager';
 import type { CreateProjectParams } from '../src/main/project/types';
 
@@ -268,6 +268,48 @@ export async function setupIpcHandlers(): Promise<void> {
   });
 
   /**
+   * Write text to clipboard
+   */
+  ipcMain.handle('clipboard:write-text', async (_event, text: string) => {
+    console.log('[IPC] Write to clipboard requested');
+    
+    try {
+      clipboard.writeText(text);
+      return {
+        success: true,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[IPC] Error writing to clipboard:', message);
+      return {
+        success: false,
+        error: message,
+      };
+    }
+  });
+
+  /**
+   * Show item in system file manager (Finder/Explorer)
+   */
+  ipcMain.handle('shell:show-item-in-folder', async (_event, fullPath: string) => {
+    console.log('[IPC] Show item in folder requested:', fullPath);
+    
+    try {
+      shell.showItemInFolder(fullPath);
+      return {
+        success: true,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[IPC] Error showing item:', message);
+      return {
+        success: false,
+        error: message,
+      };
+    }
+  });
+
+  /**
    * Select directory dialog (for new project location)
    */
   ipcMain.handle('dialog:select-directory', async () => {
@@ -303,5 +345,8 @@ export function cleanupIpcHandlers(): void {
   ipcMain.removeHandler('project:get-settings');
   ipcMain.removeHandler('project:update-settings');
   ipcMain.removeHandler('project:get-current');
+  ipcMain.removeHandler('project:get-files');
+  ipcMain.removeHandler('clipboard:write-text');
+  ipcMain.removeHandler('shell:show-item-in-folder');
   console.log('[IPC] Handlers cleaned up');
 }
