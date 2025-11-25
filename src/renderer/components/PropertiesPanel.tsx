@@ -32,10 +32,15 @@ import {
   CubeIcon,
   PaintBrushIcon,
   BoltIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  CalendarIcon,
+  UserIcon,
+  TagIcon,
 } from '@heroicons/react/24/outline';
 import { useProjectStore } from '../store/projectStore';
+import { useManifestStore } from '../store/manifestStore';
 import { ProjectSettings } from './ProjectSettings';
+import { ComponentIcon } from './ComponentTree';
 
 /**
  * Properties Panel component
@@ -58,8 +63,10 @@ export function PropertiesPanel() {
   // Get current project from store
   const currentProject = useProjectStore((state) => state.currentProject);
   
-  // TODO: Get selected component when implementing Phase 2
-  const selectedComponent = null;
+  // Get selected component from manifest store (Phase 2, Task 2.1 - Milestone 3)
+  const selectedComponentId = useManifestStore((state) => state.selectedComponentId);
+  const getComponent = useManifestStore((state) => state.getComponent);
+  const selectedComponent = selectedComponentId ? getComponent(selectedComponentId) : null;
   
   return (
     <div
@@ -92,22 +99,232 @@ export function PropertiesPanel() {
               </p>
             </div>
           </div>
-        ) : (
-          // Component selected - show placeholder for Phase 2
-          <div className="p-4">
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
-                <CubeIcon className="w-8 h-8 text-gray-400" />
+        ) : selectedComponent ? (
+          // Component selected - show component details (Phase 2, Task 2.1 - Milestone 3)
+          <div className="p-4 space-y-6">
+            {/* Component Info Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <InformationCircleIcon className="w-4 h-4 text-gray-500" />
+                <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Component Info
+                </h3>
               </div>
-              <p className="text-sm text-gray-600 mb-2">
-                Select a component to edit properties
-              </p>
-              <p className="text-xs text-gray-400 italic">
-                Coming in Phase 2 - Task 2.3
+              
+              <div className="space-y-3">
+                {/* Component Icon and Name */}
+                <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                  <ComponentIcon component={selectedComponent} className="w-6 h-6 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {selectedComponent.displayName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {selectedComponent.type}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Component ID */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Component ID
+                  </label>
+                  <div className="px-3 py-2 text-xs font-mono text-gray-600 bg-gray-50 border border-gray-200 rounded">
+                    {selectedComponent.id}
+                  </div>
+                </div>
+
+                {/* Category */}
+                {selectedComponent.category && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      <TagIcon className="w-3 h-3 inline mr-1" />
+                      Category
+                    </label>
+                    <div className="px-3 py-2 text-sm text-gray-900 bg-white border border-gray-200 rounded">
+                      {selectedComponent.category}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Metadata Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarIcon className="w-4 h-4 text-gray-500" />
+                <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Metadata
+                </h3>
+              </div>
+              
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-600">Created</span>
+                  <span className="text-gray-900">
+                    {new Date(selectedComponent.metadata.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-600">Updated</span>
+                  <span className="text-gray-900">
+                    {new Date(selectedComponent.metadata.updatedAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-600">Author</span>
+                  <span className="flex items-center gap-1 text-gray-900">
+                    <UserIcon className="w-3 h-3" />
+                    {selectedComponent.metadata.author === 'ai' ? 'AI Generated' : 'User'}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Version</span>
+                  <span className="text-gray-900">{selectedComponent.metadata.version}</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Properties Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <BoltIcon className="w-4 h-4 text-gray-500" />
+                <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Properties
+                </h3>
+              </div>
+              
+              {Object.keys(selectedComponent.properties).length > 0 ? (
+                <div className="space-y-2">
+                  {Object.entries(selectedComponent.properties).map(([key, prop]) => (
+                    <div key={key} className="p-3 bg-white border border-gray-200 rounded">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-700">{key}</span>
+                        <span className="text-xs text-gray-500 uppercase">{prop.type}</span>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {prop.type === 'static' && (
+                          <div className="font-mono bg-gray-50 px-2 py-1 rounded">
+                            {typeof prop.value === 'string' 
+                              ? `"${prop.value}"` 
+                              : String(prop.value)}
+                          </div>
+                        )}
+                        {prop.type === 'prop' && (
+                          <div className="space-y-1">
+                            <div>Type: <span className="font-mono">{prop.dataType}</span></div>
+                            <div>Required: {prop.required ? 'Yes' : 'No'}</div>
+                            {prop.default !== undefined && (
+                              <div>Default: <span className="font-mono">{String(prop.default)}</span></div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 italic py-2">No properties defined</p>
+              )}
+            </section>
+
+            {/* Styling Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <PaintBrushIcon className="w-4 h-4 text-gray-500" />
+                <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Styling
+                </h3>
+              </div>
+              
+              <div className="space-y-3">
+                {/* Base Classes */}
+                {selectedComponent.styling.baseClasses.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      Base Classes
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedComponent.styling.baseClasses.map((className, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 text-xs font-mono bg-blue-50 text-blue-700 border border-blue-200 rounded"
+                        >
+                          {className}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Classes */}
+                {selectedComponent.styling.conditionalClasses?.container && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      Conditional Classes
+                    </label>
+                    <div className="space-y-1">
+                      {selectedComponent.styling.conditionalClasses.container.map((expr, index) => (
+                        <div
+                          key={index}
+                          className="px-2 py-1 text-xs font-mono bg-purple-50 text-purple-700 border border-purple-200 rounded"
+                        >
+                          {expr}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom CSS */}
+                {selectedComponent.styling.customCSS && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      Custom CSS
+                    </label>
+                    <pre className="px-3 py-2 text-xs font-mono bg-gray-50 border border-gray-200 rounded overflow-x-auto">
+                      {selectedComponent.styling.customCSS}
+                    </pre>
+                  </div>
+                )}
+
+                {selectedComponent.styling.baseClasses.length === 0 && 
+                 !selectedComponent.styling.conditionalClasses &&
+                 !selectedComponent.styling.customCSS && (
+                  <p className="text-xs text-gray-500 italic py-2">No styling defined</p>
+                )}
+              </div>
+            </section>
+
+            {/* Children Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <CubeIcon className="w-4 h-4 text-gray-500" />
+                <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Children
+                </h3>
+              </div>
+              
+              {selectedComponent.children.length > 0 ? (
+                <div className="text-xs text-gray-900">
+                  {selectedComponent.children.length} child component{selectedComponent.children.length !== 1 ? 's' : ''}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 italic">No children</p>
+              )}
+            </section>
+
+            {/* Info Box */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-900 leading-relaxed">
+                <strong>Property Editing</strong>
+                <br />
+                Full property editor with inline editing coming in Task 2.3. Currently showing read-only component details.
               </p>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Preview of property editor interface (only show when no project) */}
         {!currentProject && (
