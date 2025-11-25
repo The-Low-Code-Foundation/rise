@@ -39,6 +39,7 @@ import {
 import { useLayout } from '../hooks/useLayout';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { PreviewPanel } from './Preview';
+import { ConsolePanel } from './Console';
 
 /**
  * Code tab content (placeholder)
@@ -66,31 +67,6 @@ function CodeTabContent() {
   );
 }
 
-/**
- * Console tab content (placeholder)
- * 
- * Will display debug output and logs in Phase 3+
- */
-function ConsoleTabContent() {
-  return (
-    <div className="flex items-center justify-center h-full bg-gray-50">
-      <div className="text-center max-w-md px-6">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-100 mb-6">
-          <CommandLineIcon className="w-10 h-10 text-purple-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Console
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">
-          View runtime logs, errors, and debug information. Monitor your application's behavior.
-        </p>
-        <div className="px-4 py-2 bg-purple-50 border border-purple-200 rounded text-xs text-purple-700 italic">
-          🚧 Console output coming in Phase 3 - Debugging Features
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Editor Panel component
@@ -219,7 +195,7 @@ export function EditorPanel() {
             <CodeTabContent />
           </Tab.Panel>
           <Tab.Panel className="flex-1 min-h-0 flex flex-col">
-            <ConsoleTabContent />
+            <ConsolePanel />
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>

@@ -35,7 +35,9 @@ import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { createServer } from 'vite';
 import { findAvailablePort } from './PortFinder';
+import { riseConsoleInjectorPlugin } from './plugins/consoleInjectorPlugin';
 import {
   ViteServerState,
   ViteServerStatus,
@@ -301,13 +303,29 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
   }
 
   /**
-   * Spawn the Vite child process
+   * Start Vite server using programmatic API
    * 
-   * Creates a child process running `npm run dev` with the specified port.
-   * Sets up event handlers for stdout/stderr/exit.
-   * Returns a promise that resolves when server is ready or rejects on error.
+   * Uses Vite's createServer() API instead of spawning npm process.
+   * This allows us to inject our console capture plugin while still
+   * respecting the user's vite.config file.
    * 
-   * @param projectPath - Absolute path to project
+   * CRITICAL: Uses programmatic API so we can inject riseConsoleInjectorPlugin
+   * into the user's Vite server. This is the ONLY way to inject server-side
+   * HTML transforms without modifying user's source files.
+   * 
+   * ADVANTAGES:
+   * - Can inject our plugin programmatically
+   * - Loads and extends user's vite.config.js/ts automatically
+   * - Better control over server lifecycle
+   * - No stdout parsing needed (direct API access)
+   * 
+   * HOW IT WORKS:
+   * 1. Call createServer() with user's project as root
+   * 2. Vite automatically loads their vite.config.js/ts
+   * 3. We inject our plugin at the beginning of plugins array
+   * 4. Start server and get port from resolved config
+   * 
+   * @param projectPath - Absolute path to user's project
    * @param port - Port to run Vite on
    * @param config - Full configuration
    * @returns Promise with start result
@@ -320,190 +338,84 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
     port: number,
     config: ViteServerConfig
   ): Promise<ViteStartResult> {
-    return new Promise((resolve) => {
-      console.log(`[ViteServerManager] Spawning Vite on port ${port}...`);
+    try {
+      console.log(`[ViteServerManager] Creating Vite server on port ${port}...`);
       
-      // Clear stdout buffer
-      this.stdoutBuffer = '';
-      
-      // Determine npm command based on platform
-      // On Windows, npm is actually npm.cmd
-      const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-      
-      // Spawn npm run dev with port override
-      // Vite respects the PORT env variable and --port argument
-      this.process = spawn(npmCommand, ['run', 'dev', '--', '--port', String(port)], {
-        cwd: projectPath,
-        // IMPORTANT: shell: false prevents command injection
-        shell: false,
-        // Pass minimal environment variables
-        env: {
-          ...process.env,
-          // Force port (some Vite configs override)
-          PORT: String(port),
-          // Disable color output for easier parsing
-          FORCE_COLOR: '0',
-          NO_COLOR: '1',
+      // Create Vite server using programmatic API
+      // This loads user's vite.config and allows us to inject plugins
+      const server = await createServer({
+        // User's project root
+        root: projectPath,
+        
+        // Server configuration
+        server: {
+          port,
+          host: 'localhost',
+          hmr: {
+            port, // Use same port for HMR
+          },
         },
-        // Pipe stdio for capture
-        stdio: ['pipe', 'pipe', 'pipe'],
+        
+        // Inject our console capture plugin FIRST
+        // This ensures it runs before user's plugins
+        plugins: [
+          riseConsoleInjectorPlugin(),
+          // User's plugins will be loaded from their vite.config
+        ],
+        
+        // Load user's vite.config.js/ts automatically
+        configFile: true,
+        
+        // Development mode
+        mode: 'development',
+        
+        // Log level (we handle logging ourselves)
+        logLevel: 'info',
       });
       
-      const pid = this.process.pid ?? null;
-      console.log(`[ViteServerManager] Process spawned with PID: ${pid}`);
+      // Start the server
+      await server.listen();
       
-      // Update state with PID
-      this.updateState({ pid });
+      // Get actual resolved port (might differ if user overrode in their config)
+      const resolvedPort = server.config.server.port ?? port;
+      const url = `http://localhost:${resolvedPort}`;
       
-      // Track if we've resolved the promise
-      let hasResolved = false;
+      console.log(`[ViteServerManager] Server started at ${url}`);
       
-      // Set startup timeout
-      const startupTimeout = config.startupTimeout ?? SERVER_TIMEOUTS.STARTUP;
-      this.startupTimeoutId = setTimeout(() => {
-        if (!hasResolved && this.state.status === 'starting') {
-          hasResolved = true;
-          
-          const error = `Server startup timed out after ${startupTimeout}ms`;
-          console.error('[ViteServerManager]', error);
-          
-          // Kill the process
-          this.killProcess();
-          
-          this.updateState({ status: 'error', error });
-          resolve({ success: false, error });
-        }
-      }, startupTimeout);
+      // Store server instance for cleanup
+      // We'll store it as (server as any) to avoid type issues
+      (this as any).viteServer = server;
       
-      // Handle stdout
-      this.process.stdout?.on('data', (data: Buffer) => {
-        const output = data.toString();
-        this.stdoutBuffer += output;
-        
-        // Emit output event for logging
-        this.emit('output', { line: output.trim(), type: 'stdout' });
-        
-        // Check if server is ready
-        // Vite outputs something like:
-        // "  ➜  Local:   http://localhost:3001/"
-        // "VITE v5.0.0  ready in 500 ms"
-        const readyMatch = this.stdoutBuffer.match(
-          /Local:\s+http:\/\/localhost:(\d+)/
-        );
-        
-        if (readyMatch && !hasResolved) {
-          hasResolved = true;
-          
-          // Clear timeout
-          if (this.startupTimeoutId) {
-            clearTimeout(this.startupTimeoutId);
-            this.startupTimeoutId = null;
-          }
-          
-          const detectedPort = parseInt(readyMatch[1], 10);
-          const url = `http://localhost:${detectedPort}`;
-          
-          console.log(`[ViteServerManager] Server ready at ${url}`);
-          
-          this.updateState({
-            status: 'running',
-            port: detectedPort,
-            url,
-            startedAt: new Date(),
-          });
-          
-          // Emit ready event
-          this.emit('ready', { port: detectedPort, url });
-          
-          resolve({ success: true, port: detectedPort, url });
-        }
+      // Update state
+      this.updateState({
+        status: 'running',
+        port: resolvedPort,
+        url,
+        startedAt: new Date(),
+        pid: process.pid, // Vite runs in same process
       });
       
-      // Handle stderr
-      this.process.stderr?.on('data', (data: Buffer) => {
-        const output = data.toString();
-        
-        // Emit output event
-        this.emit('output', { line: output.trim(), type: 'stderr' });
-        
-        // Check for common errors
-        if (output.includes('EADDRINUSE')) {
-          // Port conflict (shouldn't happen with PortFinder, but just in case)
-          if (!hasResolved) {
-            hasResolved = true;
-            
-            if (this.startupTimeoutId) {
-              clearTimeout(this.startupTimeoutId);
-              this.startupTimeoutId = null;
-            }
-            
-            const error = `Port ${port} is already in use`;
-            this.updateState({ status: 'error', error });
-            this.emit('error', { message: error, code: 'EADDRINUSE' });
-            resolve({ success: false, error });
-          }
-        }
-      });
+      // Emit ready event
+      this.emit('ready', { port: resolvedPort, url });
       
-      // Handle process exit
-      this.process.on('exit', (code, signal) => {
-        console.log(`[ViteServerManager] Process exited with code ${code}, signal ${signal}`);
-        
-        // Clear timeout
-        if (this.startupTimeoutId) {
-          clearTimeout(this.startupTimeoutId);
-          this.startupTimeoutId = null;
-        }
-        
-        // Clean up process reference
-        this.process = null;
-        
-        // If we haven't resolved yet, it's an error
-        if (!hasResolved) {
-          hasResolved = true;
-          
-          const error = `Server exited unexpectedly (code: ${code}, signal: ${signal})`;
-          this.updateState({ status: 'error', error, pid: null });
-          this.emit('error', { message: error, code: String(code) });
-          resolve({ success: false, error });
-        } else if (this.state.status === 'running' && !this.isStopping) {
-          // Server crashed while running
-          const error = `Server crashed (code: ${code}, signal: ${signal})`;
-          this.updateState({ status: 'error', error, pid: null });
-          this.emit('error', { message: error, code: String(code) });
-        } else if (this.isStopping) {
-          // Expected exit during stop
-          this.updateState({ status: 'stopped', pid: null });
-          this.emit('stopped', undefined);
-        }
-      });
+      return { success: true, port: resolvedPort, url };
       
-      // Handle spawn errors
-      this.process.on('error', (err) => {
-        console.error('[ViteServerManager] Process error:', err);
-        
-        if (this.startupTimeoutId) {
-          clearTimeout(this.startupTimeoutId);
-          this.startupTimeoutId = null;
-        }
-        
-        if (!hasResolved) {
-          hasResolved = true;
-          
-          const error = `Failed to start server: ${err.message}`;
-          this.updateState({ status: 'error', error, pid: null });
-          this.emit('error', { message: error });
-          resolve({ success: false, error });
-        }
-      });
-    });
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      console.error('[ViteServerManager] Failed to start server:', error);
+      
+      this.updateState({ status: 'error', error });
+      this.emit('error', { message: error });
+      
+      return { success: false, error };
+    }
   }
 
   /**
    * Stop the Vite dev server
    * 
-   * Attempts graceful shutdown with SIGTERM, then falls back to SIGKILL
-   * if process doesn't exit within timeout.
+   * Uses Vite's close() API for graceful shutdown.
+   * Much cleaner than killing a process.
    * 
    * Safe to call even if server is not running (no-op).
    * 
@@ -512,8 +424,8 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
    * @async
    */
   async stop(): Promise<void> {
-    // If already stopped or stopping, no-op
-    if (!this.process && this.state.status === 'stopped') {
+    // If already stopped, no-op
+    if (this.state.status === 'stopped') {
       console.log('[ViteServerManager] Server already stopped');
       return;
     }
@@ -538,47 +450,28 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
     // Update state
     this.updateState({ status: 'stopping' });
     
-    // If no process, just reset state
-    if (!this.process) {
-      this.resetState();
-      this.isStopping = false;
-      return;
-    }
-    
-    // Store reference before potential null
-    const proc = this.process;
-    
-    return new Promise((resolve) => {
-      // Set up kill timeout for SIGKILL fallback
-      const killTimeoutId = setTimeout(() => {
-        console.log('[ViteServerManager] Graceful shutdown timed out, sending SIGKILL...');
-        this.killProcess();
-      }, SERVER_TIMEOUTS.GRACEFUL_SHUTDOWN);
-      
-      // Listen for exit
-      const onExit = () => {
-        clearTimeout(killTimeoutId);
-        this.resetState();
-        this.isStopping = false;
-        resolve();
-      };
-      
-      // One-time listener for exit
-      proc.once('exit', onExit);
-      
-      // Send SIGTERM for graceful shutdown
-      console.log('[ViteServerManager] Sending SIGTERM...');
-      try {
-        proc.kill('SIGTERM');
-      } catch (err) {
-        // Process might already be dead
-        console.log('[ViteServerManager] Error sending SIGTERM:', err);
-        clearTimeout(killTimeoutId);
-        this.resetState();
-        this.isStopping = false;
-        resolve();
+    try {
+      // Close Vite server gracefully using its API
+      const viteServer = (this as any).viteServer;
+      if (viteServer) {
+        await viteServer.close();
+        (this as any).viteServer = null;
       }
-    });
+      
+      // Reset state
+      this.resetState();
+      this.emit('stopped', undefined);
+      
+    } catch (err) {
+      console.error('[ViteServerManager] Error stopping server:', err);
+      // Force cleanup on error
+      (this as any).viteServer = null;
+      this.resetState();
+      this.emit('stopped', undefined);
+      
+    } finally {
+      this.isStopping = false;
+    }
   }
 
   /**
@@ -717,8 +610,8 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
   /**
    * Clean up resources
    * 
-   * Should be called when app is quitting to ensure no orphan processes.
-   * Force kills any running server without waiting for graceful shutdown.
+   * Should be called when app is quitting to ensure clean shutdown.
+   * Closes Vite server if running.
    * 
    * @async
    */
@@ -731,7 +624,18 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
       this.startupTimeoutId = null;
     }
     
-    // Force kill process
+    // Close Vite server if running
+    try {
+      const viteServer = (this as any).viteServer;
+      if (viteServer) {
+        await viteServer.close();
+        (this as any).viteServer = null;
+      }
+    } catch (err) {
+      console.error('[ViteServerManager] Error closing server during cleanup:', err);
+    }
+    
+    // Force kill process (fallback, should not be needed with programmatic API)
     this.killProcess();
     
     // Reset state

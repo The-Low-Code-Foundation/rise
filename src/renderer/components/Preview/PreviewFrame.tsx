@@ -24,6 +24,7 @@
  */
 
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { usePreviewStore } from '../../store/previewStore';
 
 /**
  * Device frame dimensions for visual representation
@@ -107,9 +108,36 @@ export function PreviewFrame({
   // Reference to iframe for potential future interactions
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
+  // Get console log action from store
+  const addConsoleLog = usePreviewStore(state => state.addConsoleLog);
+  
+  // Listen for console messages from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      console.log('[PreviewFrame] Received postMessage:', event.data);
+      
+      // Security: Verify message is from our preview iframe
+      // (In production, check event.origin matches preview server URL)
+      if (event.data && event.data.type === 'console') {
+        console.log('[PreviewFrame] Processing console message, adding to store');
+        // Add the log to the store
+        addConsoleLog(event.data);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [addConsoleLog]);
+  
   // Handle iframe load event
   const handleLoad = useCallback(() => {
+    console.log('[PreviewFrame] iframe loaded successfully');
     setIsLoading(false);
+    
+    // NOTE: Console capture script is now injected server-side by the Vite plugin
+    // (src/main/preview/plugins/consoleInjectorPlugin.ts)
+    // We just need to listen for postMessage events, which is handled in the useEffect above
+    
     onLoad?.();
   }, [onLoad]);
   
