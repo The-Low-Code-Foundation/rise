@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "1.0.0",
+  "level": 1,
+  "metadata": {
+    "projectName": "Max Depth Test",
+    "framework": "react",
+    "createdAt": "2025-11-26T10:00:00.000Z",
+    "updatedAt": "2025-11-26T10:00:00.000Z"
+  },
+  "buildConfig": {
+    "bundler": "vite",
+    "cssFramework": "tailwind"
+  },
+  "plugins": {
+    "framework": {
+      "name": "@rise/plugin-react",
+      "version": "1.0.0"
+    }
+  },
+  "components": {
+    "comp_level0": {
+      "id": "comp_level0",
+      "displayName": "Level 0 (Root)",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": ["comp_level1"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_level1": {
+      "id": "comp_level1",
+      "displayName": "Level 1",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": ["comp_level2"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_level2": {
+      "id": "comp_level2",
+      "displayName": "Level 2",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": ["comp_level3"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_level3": {
+      "id": "comp_level3",
+      "displayName": "Level 3",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": ["comp_level4"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_level4": {
+      "id": "comp_level4",
+      "displayName": "Level 4 (Max allowed)",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": ["comp_level5"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_level5": {
+      "id": "comp_level5",
+      "displayName": "Level 5 (EXCEEDS MAX - Invalid)",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": []
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0.0",
+  "level": 1,
+  "metadata": {
+    "projectName": "Complex Test Project",
+    "framework": "react",
+    "createdAt": "2025-11-26T10:00:00.000Z",
+    "updatedAt": "2025-11-26T10:00:00.000Z"
+  },
+  "buildConfig": {
+    "bundler": "vite",
+    "cssFramework": "tailwind"
+  },
+  "plugins": {
+    "framework": {
+      "name": "@rise/plugin-react",
+      "version": "1.0.0"
+    }
+  },
+  "components": {
+    "comp_root_001": {
+      "id": "comp_root_001",
+      "displayName": "App Container",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["min-h-screen", "bg-gray-50"]
+      },
+      "children": ["comp_header_001", "comp_main_001", "comp_footer_001"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_header_001": {
+      "id": "comp_header_001",
+      "displayName": "Header",
+      "type": "header",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["bg-white", "shadow-sm", "p-4"]
+      },
+      "children": ["comp_nav_001"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_nav_001": {
+      "id": "comp_nav_001",
+      "displayName": "Navigation",
+      "type": "nav",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["flex", "gap-4"]
+      },
+      "children": ["comp_btn_001", "comp_btn_002"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_btn_001": {
+      "id": "comp_btn_001",
+      "displayName": "Home Button",
+      "type": "button",
+      "category": "basic",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["px-4", "py-2", "bg-blue-500", "text-white", "rounded"]
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_btn_002": {
+      "id": "comp_btn_002",
+      "displayName": "About Button",
+      "type": "button",
+      "category": "basic",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["px-4", "py-2", "bg-gray-500", "text-white", "rounded"]
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_main_001": {
+      "id": "comp_main_001",
+      "displayName": "Main Content",
+      "type": "main",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["flex-1", "p-8"]
+      },
+      "children": ["comp_section_001"],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_section_001": {
+      "id": "comp_section_001",
+      "displayName": "Content Section",
+      "type": "section",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["space-y-4"]
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    },
+    "comp_footer_001": {
+      "id": "comp_footer_001",
+      "displayName": "Footer",
+      "type": "footer",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["bg-gray-800", "text-white", "p-4", "text-center"]
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-26T10:00:00.000Z",
+        "updatedAt": "2025-11-26T10:00:00.000Z",
+        "author": "user",
+        "version": "1.0.0"
+      }
+    }
+  }
+}
