@@ -34,7 +34,14 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron'],
+              external: ['electron', 'keytar', 'vite', 'esbuild', 'rollup', 'fsevents'],
+            },
+          },
+          resolve: {
+            // Force .ts extension resolution for src/main imports
+            extensions: ['.ts', '.js', '.mjs', '.json'],
+            alias: {
+              '@main': path.resolve(__dirname, './src/main'),
             },
           },
         },

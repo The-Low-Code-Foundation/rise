@@ -20,12 +20,7 @@
 
 import { app, BrowserWindow, Menu, shell } from 'electron';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { setupIpcHandlers, cleanupPreviewServer, cleanupIpcHandlers } from './ipc-handlers';
-
-// ESM compatibility
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Main application window instance

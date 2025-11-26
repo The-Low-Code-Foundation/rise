@@ -364,7 +364,8 @@ export class ViteServerManager extends EventEmitter implements TypedEventEmitter
         ],
         
         // Load user's vite.config.js/ts automatically
-        configFile: true,
+        // Must be a string path (true was causing error), or false to skip
+        configFile: path.join(projectPath, 'vite.config.ts'),
         
         // Development mode
         mode: 'development',

@@ -256,9 +256,9 @@ export function NavigatorPanel() {
               <div className="flex items-center justify-center gap-2">
                 <CubeIcon className="w-4 h-4" />
                 <span>Components</span>
-                {manifest && manifest.components.length > 0 && (
-                  <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
-                    {manifest.components.length}
+                {manifest && Object.keys(manifest.components).length > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {Object.keys(manifest.components).length}
                   </span>
                 )}
               </div>
