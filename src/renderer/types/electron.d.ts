@@ -74,6 +74,99 @@ export interface ManifestAPI {
 }
 
 /**
+ * AI generation context passed to Claude
+ */
+export interface GenerationContext {
+  framework: 'react';
+  schemaLevel: 1;
+  parentComponentId?: string;
+  parentComponentType?: string;
+  existingComponentNames: string[];
+}
+
+/**
+ * Result of AI component generation
+ */
+export interface GenerationResult {
+  success: boolean;
+  component?: any; // Component type from manifest
+  error?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    cost: number;
+  };
+}
+
+/**
+ * Cost estimate before making API call
+ */
+export interface CostEstimate {
+  estimatedCost: number;
+  remainingBudget: number;
+  canAfford: boolean;
+  warning?: string;
+}
+
+/**
+ * Current usage statistics
+ */
+export interface UsageStats {
+  todaySpent: number;
+  dailyBudget: number;
+  remaining: number;
+  requestCount: number;
+  percentUsed: number;
+}
+
+/**
+ * Budget configuration
+ */
+export interface BudgetConfig {
+  dailyBudgetUSD: number;
+  warningThreshold: number;
+  strictMode: boolean;
+}
+
+/**
+ * AI API interface for component generation
+ */
+export interface AIAPI {
+  /** Initialize AI generator for a project */
+  initialize: (projectPath: string) => Promise<{ success: boolean; error?: string }>;
+  
+  /** Cleanup AI generator when project closes */
+  cleanup: () => Promise<{ success: boolean }>;
+  
+  /** Check if API key is configured */
+  hasKey: () => Promise<{ success: boolean; hasKey: boolean; error?: string }>;
+  
+  /** Validate an API key (makes test API call) */
+  validateKey: (apiKey: string) => Promise<{ success: boolean; valid: boolean; error?: string; errorCode?: string }>;
+  
+  /** Store API key (validates first) */
+  storeKey: (apiKey: string) => Promise<{ success: boolean; error?: string; errorCode?: string }>;
+  
+  /** Delete stored API key */
+  deleteKey: () => Promise<{ success: boolean; deleted: boolean; error?: string }>;
+  
+  /** Estimate cost for a prompt */
+  estimateCost: (prompt: string) => Promise<{ success: boolean; estimate?: CostEstimate; error?: string }>;
+  
+  /** Generate a component from natural language */
+  generate: (prompt: string, context: GenerationContext) => Promise<{ success: boolean; result?: GenerationResult; error?: string }>;
+  
+  /** Get current usage statistics */
+  getUsageStats: () => Promise<{ success: boolean; stats?: UsageStats; error?: string }>;
+  
+  /** Get budget configuration */
+  getBudgetConfig: () => Promise<{ success: boolean; config?: BudgetConfig; error?: string }>;
+  
+  /** Update budget configuration */
+  updateBudgetConfig: (config: Partial<BudgetConfig>) => Promise<{ success: boolean; error?: string }>;
+}
+
+/**
  * Preview server state
  */
 export interface PreviewServerState {
@@ -158,6 +251,9 @@ export interface ElectronAPI {
   
   // Manifest system
   manifest: ManifestAPI;
+  
+  // AI system (Task 2.4A)
+  ai: AIAPI;
 }
 
 /**

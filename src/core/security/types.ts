@@ -118,6 +118,10 @@ export enum SecurityEventType {
   API_KEY_DELETED = 'api_key_deleted',
   API_KEY_ROTATION_WARNING = 'api_key_rotation_warning',
   
+  // API Call Events
+  API_CALL = 'api_call',
+  API_ERROR = 'api_error',
+  
   // Input Validation Events
   INVALID_INPUT = 'invalid_input',
   PATH_TRAVERSAL_ATTEMPT = 'path_traversal_attempt',

@@ -38,6 +38,90 @@ interface PreviewServerState {
 }
 
 /**
+ * AI Generation API interface
+ * 
+ * Controls AI component generation via Claude API.
+ * All operations go through the main process for security (API key protection).
+ */
+export interface AIAPI {
+  /** Initialize AI generator for a project */
+  initialize: (projectPath: string) => Promise<{ success: boolean; error?: string }>;
+  
+  /** Cleanup AI generator when project closes */
+  cleanup: () => Promise<{ success: boolean }>;
+  
+  /** Check if API key is configured */
+  hasKey: () => Promise<{ success: boolean; hasKey: boolean; error?: string }>;
+  
+  /** Validate an API key (makes test API call) */
+  validateKey: (apiKey: string) => Promise<{ success: boolean; valid: boolean; error?: string; errorCode?: string }>;
+  
+  /** Store API key (validates first) */
+  storeKey: (apiKey: string) => Promise<{ success: boolean; error?: string; errorCode?: string }>;
+  
+  /** Delete stored API key */
+  deleteKey: () => Promise<{ success: boolean; deleted: boolean; error?: string }>;
+  
+  /** Estimate cost for a prompt */
+  estimateCost: (prompt: string) => Promise<{ success: boolean; estimate?: CostEstimate; error?: string }>;
+  
+  /** Generate a component from natural language */
+  generate: (prompt: string, context: GenerationContext) => Promise<{ success: boolean; result?: GenerationResult; error?: string }>;
+  
+  /** Get current usage statistics */
+  getUsageStats: () => Promise<{ success: boolean; stats?: UsageStats; error?: string }>;
+  
+  /** Get budget configuration */
+  getBudgetConfig: () => Promise<{ success: boolean; config?: BudgetConfig; error?: string }>;
+  
+  /** Update budget configuration */
+  updateBudgetConfig: (config: Partial<BudgetConfig>) => Promise<{ success: boolean; error?: string }>;
+}
+
+/**
+ * AI types (simplified for preload context)
+ */
+interface GenerationContext {
+  framework: 'react';
+  schemaLevel: 1;
+  parentComponentId?: string;
+  parentComponentType?: string;
+  existingComponentNames: string[];
+}
+
+interface GenerationResult {
+  success: boolean;
+  component?: any; // Component type from manifest
+  error?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    cost: number;
+  };
+}
+
+interface CostEstimate {
+  estimatedCost: number;
+  remainingBudget: number;
+  canAfford: boolean;
+  warning?: string;
+}
+
+interface UsageStats {
+  todaySpent: number;
+  dailyBudget: number;
+  remaining: number;
+  requestCount: number;
+  percentUsed: number;
+}
+
+interface BudgetConfig {
+  dailyBudgetUSD: number;
+  warningThreshold: number;
+  strictMode: boolean;
+}
+
+/**
  * Manifest API interface
  * 
  * Manages manifest file operations (load, save, initialize).
@@ -167,6 +251,9 @@ export interface ElectronAPI {
   
   // Manifest system (Task 2.2A)
   manifest: ManifestAPI;
+  
+  // AI system (Task 2.4A)
+  ai: AIAPI;
   
   // File operations (to be implemented in future tasks)
   // readFile: (filepath: string) => Promise<string>;
@@ -310,6 +397,44 @@ const electronAPI: ElectronAPI = {
     // Initialize empty manifest
     initialize: (projectPath: string, projectName: string) => 
       ipcRenderer.invoke('manifest:initialize', projectPath, projectName),
+  },
+  
+  // AI system (Task 2.4A)
+  ai: {
+    // Initialize AI generator for a project
+    initialize: (projectPath: string) => ipcRenderer.invoke('ai:initialize', projectPath),
+    
+    // Cleanup AI generator
+    cleanup: () => ipcRenderer.invoke('ai:cleanup'),
+    
+    // Check if API key is configured
+    hasKey: () => ipcRenderer.invoke('ai:has-key'),
+    
+    // Validate an API key
+    validateKey: (apiKey: string) => ipcRenderer.invoke('ai:validate-key', apiKey),
+    
+    // Store API key
+    storeKey: (apiKey: string) => ipcRenderer.invoke('ai:store-key', apiKey),
+    
+    // Delete API key
+    deleteKey: () => ipcRenderer.invoke('ai:delete-key'),
+    
+    // Estimate cost for a prompt
+    estimateCost: (prompt: string) => ipcRenderer.invoke('ai:estimate-cost', prompt),
+    
+    // Generate component from prompt
+    generate: (prompt: string, context: GenerationContext) => 
+      ipcRenderer.invoke('ai:generate', prompt, context),
+    
+    // Get usage statistics
+    getUsageStats: () => ipcRenderer.invoke('ai:get-usage-stats'),
+    
+    // Get budget configuration
+    getBudgetConfig: () => ipcRenderer.invoke('ai:get-budget-config'),
+    
+    // Update budget configuration
+    updateBudgetConfig: (config: Partial<BudgetConfig>) => 
+      ipcRenderer.invoke('ai:update-budget-config', config),
   },
   
   // File operations will be added in future tasks
