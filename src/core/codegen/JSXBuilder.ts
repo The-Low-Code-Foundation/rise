@@ -322,6 +322,52 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
       }
     }
 
+    // Fallback: Find the first string prop to use as display text
+    // This ensures AI-generated components with custom prop names still display something
+    return this.findFallbackTextProp(component);
+  }
+
+  /**
+   * Find a fallback string prop to use as text content
+   * Used when no standard text props (label, text, content, children) are found
+   *
+   * PRIORITY:
+   * 1. Props with 'name' in the name (e.g., userName, displayName)
+   * 2. Props with 'title' in the name
+   * 3. Any other string prop
+   *
+   * @param component - The component definition
+   * @returns The prop name and definition, or null if none found
+   */
+  private findFallbackTextProp(
+    component: Component
+  ): { name: string; prop: ComponentProperty } | null {
+    const properties = component.properties || {};
+    const propEntries = Object.entries(properties);
+
+    if (propEntries.length === 0) {
+      return null;
+    }
+
+    // First pass: look for props with 'name' or 'title' in the name
+    for (const [propName, prop] of propEntries) {
+      const dataType = getPropertyDataType(prop);
+      if (dataType !== 'string') continue;
+
+      const lowerName = propName.toLowerCase();
+      if (lowerName.includes('name') || lowerName.includes('title')) {
+        return { name: propName, prop };
+      }
+    }
+
+    // Second pass: any string prop
+    for (const [propName, prop] of propEntries) {
+      const dataType = getPropertyDataType(prop);
+      if (dataType === 'string') {
+        return { name: propName, prop };
+      }
+    }
+
     return null;
   }
 

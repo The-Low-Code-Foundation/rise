@@ -497,6 +497,17 @@ CRITICAL LEVEL 1 RESTRICTIONS (MUST FOLLOW):
 - NO computed properties
 - Only use: static values, props with defaults, Tailwind CSS classes
 
+IMPORTANT - VISIBLE CONTENT REQUIREMENT:
+For ANY component that should display text, you MUST include a "text" property.
+The "text" property will be rendered inside the component. Without it, the component will appear EMPTY.
+Example - if creating a user card, add:
+  "text": {
+    "type": "prop",
+    "dataType": "string",
+    "default": "John Doe"
+  }
+Other properties like "userName", "avatarUrl" can exist as additional data, but "text" is what gets displayed.
+
 REQUIRED RESPONSE FORMAT:
 Return ONLY valid JSON matching this exact structure (no markdown, no explanation, no code blocks):
 
@@ -535,6 +546,15 @@ Prop (input from parent):
     "dataType": "string|number|boolean",
     "required": true|false,
     "default": "default value"
+  }
+}
+
+REQUIRED "text" property (for visible content):
+{
+  "text": {
+    "type": "prop",
+    "dataType": "string",
+    "default": "Your visible text here"
   }
 }
 

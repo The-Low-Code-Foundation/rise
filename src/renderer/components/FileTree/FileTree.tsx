@@ -121,22 +121,32 @@ export function FileTree({ projectPath, searchQuery = '', onRefreshComplete }: F
    * @returns Array of child nodes
    */
   const loadDirectory = async (dirPath: string): Promise<FileTreeNode[]> => {
+    console.log('[FileTree] loadDirectory called:', dirPath);
+    
     try {
       if (!electronAPI?.getProjectFiles) {
-        console.error('getProjectFiles API not available');
+        console.error('[FileTree] getProjectFiles API not available');
         return [];
       }
 
       const result = await electronAPI.getProjectFiles(dirPath);
+      console.log('[FileTree] getProjectFiles result:', { 
+        path: dirPath, 
+        success: result.success, 
+        fileCount: result.files?.length,
+        error: result.error 
+      });
       
       if (result.success && result.files) {
-        return sortNodes(result.files);
+        const sorted = sortNodes(result.files);
+        console.log('[FileTree] Sorted files:', sorted.map((f: FileTreeNode) => ({ name: f.name, isDir: f.isDirectory })));
+        return sorted;
       } else {
-        console.error('Failed to load directory:', result.error);
+        console.error('[FileTree] Failed to load directory:', result.error);
         return [];
       }
     } catch (err) {
-      console.error('Error loading directory:', err);
+      console.error('[FileTree] Error loading directory:', err);
       return [];
     }
   };
@@ -307,23 +317,37 @@ export function FileTree({ projectPath, searchQuery = '', onRefreshComplete }: F
    * @param node - Node being toggled
    */
   const handleToggle = async (node: FileTreeNode) => {
-    if (!node.isDirectory) return;
+    console.log('[FileTree] handleToggle called:', {
+      path: node.path,
+      name: node.name,
+      isDirectory: node.isDirectory
+    });
+    
+    if (!node.isDirectory) {
+      console.log('[FileTree] Node is not a directory, ignoring toggle');
+      return;
+    }
 
     const isExpanded = expandedPaths.has(node.path);
+    console.log('[FileTree] Current expansion state:', { isExpanded, expandedPaths: [...expandedPaths] });
 
     if (isExpanded) {
       // Collapse: remove from expanded set
+      console.log('[FileTree] Collapsing directory');
       const newExpanded = new Set(expandedPaths);
       newExpanded.delete(node.path);
       setExpandedPaths(newExpanded);
     } else {
       // Expand: add to expanded set
+      console.log('[FileTree] Expanding directory');
       const newExpanded = new Set(expandedPaths);
       newExpanded.add(node.path);
       setExpandedPaths(newExpanded);
 
       // Load children if not already loaded
       if (!childrenMap.has(node.path)) {
+        console.log('[FileTree] Loading children for:', node.path);
+        
         // Mark as loading
         const newLoading = new Set(loadingPaths);
         newLoading.add(node.path);
@@ -331,6 +355,7 @@ export function FileTree({ projectPath, searchQuery = '', onRefreshComplete }: F
 
         // Load children
         const children = await loadDirectory(node.path);
+        console.log('[FileTree] Loaded children:', { path: node.path, count: children.length, children: children.map(c => c.name) });
 
         // Update children map
         const newChildrenMap = new Map(childrenMap);
@@ -341,6 +366,8 @@ export function FileTree({ projectPath, searchQuery = '', onRefreshComplete }: F
         const updatedLoading = new Set(loadingPaths);
         updatedLoading.delete(node.path);
         setLoadingPaths(updatedLoading);
+      } else {
+        console.log('[FileTree] Children already loaded for:', node.path, 'count:', childrenMap.get(node.path)?.length);
       }
     }
   };
