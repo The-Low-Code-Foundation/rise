@@ -51,6 +51,18 @@ export interface RootComponentInfo {
 }
 
 /**
+ * Convert a string to PascalCase for valid React component names
+ * 
+ * @param str - Input string
+ * @returns PascalCase string
+ */
+function toPascalCase(str: string): string {
+  if (!str) return str;
+  // Capitalize first letter, keep rest as-is
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
  * Configuration options for AppGenerator
  */
 export interface AppGeneratorOptions {
@@ -177,18 +189,21 @@ export class AppGenerator implements IAppGenerator {
     const header = this.buildCommentHeader();
 
     // Assemble complete file
+    // Use "RootApp" wrapper name to avoid conflicts with user components named "App"
     const code = `import React from 'react';
 
 ${header}
 ${imports}
 
-export default function App() {
+function RootApp() {
   return (
     <div className="app">
 ${jsx}
     </div>
   );
 }
+
+export default RootApp;
 `;
 
     // Format with Prettier if enabled
@@ -273,6 +288,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   /**
    * Build import statements for root components
    * 
+   * Uses PascalCase for component names to ensure valid React components.
+   * 
    * @param components - Sorted root components
    * @returns Import statements as string
    */
@@ -282,8 +299,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     }
 
     const imports = components.map((comp) => {
-      // Import from ./components/{displayName}
-      return `import { ${comp.displayName} } from './components/${comp.displayName}';`;
+      // Convert to PascalCase for valid React component name
+      const componentName = toPascalCase(comp.displayName);
+      // Import from ./components/{displayName} (file uses original name)
+      return `import { ${componentName} } from './components/${comp.displayName}';`;
     });
 
     return imports.join('\n');
@@ -291,6 +310,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
   /**
    * Build JSX for rendering root components
+   * 
+   * Uses PascalCase for JSX tags to ensure they're interpreted as React components
+   * (not as HTML elements like <div>).
    * 
    * @param components - Sorted root components
    * @returns JSX elements as string (with indentation)
@@ -301,8 +323,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     }
 
     const jsx = components.map((comp) => {
+      // Convert to PascalCase for valid React JSX tag
+      const componentName = toPascalCase(comp.displayName);
       // Render each component as self-closing JSX
-      return `      <${comp.displayName} />`;
+      return `      <${componentName} />`;
     });
 
     return jsx.join('\n');

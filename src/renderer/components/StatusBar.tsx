@@ -34,6 +34,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { GenerationStatus } from './GenerationStatus';
 
 /**
  * Status bar component
@@ -138,6 +139,11 @@ export function StatusBar() {
         <span className="font-medium">
           {projectName ? `Project: ${projectName}` : 'No Project Open'}
         </span>
+      </div>
+
+      {/* Center section: Generation status (Task 3.3) */}
+      <div className="flex items-center">
+        <GenerationStatus />
       </div>
 
       {/* Right section: System information and status */}

@@ -38,6 +38,8 @@ import { useProjectStore } from './store/projectStore';
 import { usePreviewStore } from './store/previewStore';
 import { useManifestStore } from './store/manifestStore';
 import { useAIStore } from './store/aiStore';
+import { useGenerationStore } from './store/generationStore';
+import { GenerationService } from './services/GenerationService';
 
 /**
  * Root application component
@@ -97,12 +99,14 @@ function App() {
   }, [initializeListeners]);
   
   /**
-   * Handle preview and AI lifecycle based on project changes
+   * Handle preview, AI, and generation lifecycle based on project changes
    * 
    * BEHAVIOR:
-   * - When a project is opened: Start preview and initialize AI
-   * - When a project is closed: Stop preview and cleanup AI
+   * - When a project is opened: Start preview, initialize AI, start generation watching
+   * - When a project is closed: Stop preview, cleanup AI, stop generation
    * - When switching projects: Stop old, start new
+   * 
+   * TASK 3.3: Added GenerationService lifecycle management
    */
   useEffect(() => {
     const currentPath = currentProject?.path ?? null;
@@ -110,17 +114,29 @@ function App() {
     
     // Project changed
     if (currentPath !== previousPath) {
-      // If there was a previous project, stop its preview, clear manifest, cleanup AI
+      // If there was a previous project, stop its preview, clear manifest, cleanup AI, stop generation
       if (previousPath) {
         stopPreview();
         clearManifest(); // Task 2.2B: Clear manifest on project close
         cleanupAI(); // Task 2.4E: Cleanup AI on project close
+        
+        // Task 3.3: Cleanup generation service
+        GenerationService.getInstance().cleanup();
+        useGenerationStore.getState().reset();
       }
       
-      // If there's a new project, start its preview and initialize AI
+      // If there's a new project, start its preview, initialize AI, start generation
       if (currentPath) {
         startPreview(currentPath);
         initializeAI(currentPath); // Task 2.4E: Initialize AI on project open
+        
+        // Task 3.3: Initialize generation service and mark as watching
+        // The service will start listening for manifest changes automatically
+        GenerationService.getInstance().initialize();
+        useGenerationStore.getState().setWatching(true);
+        
+        // Note: Initial generation happens automatically when manifest loads
+        // via the manifestStore subscription in GenerationService
       }
       
       // Update the ref for next comparison

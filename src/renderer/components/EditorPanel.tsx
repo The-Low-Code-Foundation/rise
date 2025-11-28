@@ -29,7 +29,6 @@
  * @performance-critical false
  */
 
-import React from 'react';
 import { Tab } from '@headlessui/react';
 import {
   EyeIcon,
@@ -40,32 +39,7 @@ import { useLayout } from '../hooks/useLayout';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { PreviewPanel } from './Preview';
 import { ConsolePanel } from './Console';
-
-/**
- * Code tab content (placeholder)
- * 
- * Will display generated React code in Task 3.1+
- */
-function CodeTabContent() {
-  return (
-    <div className="flex items-center justify-center h-full bg-gray-50">
-      <div className="text-center max-w-md px-6">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
-          <CodeBracketIcon className="w-10 h-10 text-green-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Code
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">
-          View the generated React code for your components. Clean, production-ready code.
-        </p>
-        <div className="px-4 py-2 bg-green-50 border border-green-200 rounded text-xs text-green-700 italic">
-          🚧 Code generation coming in Phase 3 - Task 3.1
-        </div>
-      </div>
-    </div>
-  );
-}
+import { CodePanel } from './CodeViewer';
 
 
 /**
@@ -192,7 +166,7 @@ export function EditorPanel() {
             <PreviewPanel />
           </Tab.Panel>
           <Tab.Panel className="flex-1 min-h-0 flex flex-col">
-            <CodeTabContent />
+            <CodePanel />
           </Tab.Panel>
           <Tab.Panel className="flex-1 min-h-0 flex flex-col">
             <ConsolePanel />

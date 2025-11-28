@@ -43,6 +43,70 @@ interface PreviewServerState {
  * Controls AI component generation via Claude API.
  * All operations go through the main process for security (API key protection).
  */
+/**
+ * Generation API interface
+ * 
+ * Controls code generation from manifest to files.
+ * Calls FileManager in main process via IPC.
+ */
+export interface GenerationAPI {
+  /** Generate files from manifest (incremental by default) */
+  generate: (request: GenerateRequest) => Promise<GenerateResult>;
+  
+  /** Force full regeneration of all files */
+  regenerateAll: (request: GenerateRequest) => Promise<GenerateResult>;
+  
+  /** Cleanup FileManager when project closes */
+  cleanup: () => Promise<{ success: boolean }>;
+  
+  /** Get current FileManager status (for debugging) */
+  status: () => Promise<{ initialized: boolean; projectPath: string | null }>;
+}
+
+/**
+ * Generation request parameters
+ */
+export interface GenerateRequest {
+  /** Absolute path to project root */
+  projectPath: string;
+  
+  /** Complete manifest object */
+  manifest: any;
+  
+  /** If true, only regenerate changed components (default: true) */
+  incremental?: boolean;
+}
+
+/**
+ * Generation result
+ */
+export interface GenerateResult {
+  /** Whether generation succeeded */
+  success: boolean;
+  
+  /** Generation summary on success */
+  data?: {
+    filesWritten: number;
+    filesFailed: number;
+    durationMs: number;
+    breakdown?: {
+      added: number;
+      modified: number;
+      removed: number;
+      appRegenerated: boolean;
+    };
+  };
+  
+  /** Error message on failure */
+  error?: string;
+  
+  /** Detailed errors (if any files failed) */
+  errors?: Array<{
+    filepath: string;
+    error: string;
+  }>;
+}
+
 export interface AIAPI {
   /** Initialize AI generator for a project */
   initialize: (projectPath: string) => Promise<{ success: boolean; error?: string }>;
@@ -255,6 +319,9 @@ export interface ElectronAPI {
   // AI system (Task 2.4A)
   ai: AIAPI;
   
+  // Code generation system (Task 3.3)
+  generation: GenerationAPI;
+  
   // File operations (to be implemented in future tasks)
   // readFile: (filepath: string) => Promise<string>;
   // writeFile: (filepath: string, content: string) => Promise<void>;
@@ -435,6 +502,23 @@ const electronAPI: ElectronAPI = {
     // Update budget configuration
     updateBudgetConfig: (config: Partial<BudgetConfig>) => 
       ipcRenderer.invoke('ai:update-budget-config', config),
+  },
+  
+  // Code generation system (Task 3.3)
+  generation: {
+    // Generate files from manifest (incremental by default)
+    generate: (request: GenerateRequest) => 
+      ipcRenderer.invoke('generation:generate', request),
+    
+    // Force full regeneration of all files
+    regenerateAll: (request: GenerateRequest) => 
+      ipcRenderer.invoke('generation:regenerate-all', request),
+    
+    // Cleanup FileManager when project closes
+    cleanup: () => ipcRenderer.invoke('generation:cleanup'),
+    
+    // Get current FileManager status
+    status: () => ipcRenderer.invoke('generation:status'),
   },
   
   // File operations will be added in future tasks

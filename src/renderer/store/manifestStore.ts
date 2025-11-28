@@ -76,6 +76,168 @@ const SAVE_DEBOUNCE_MS = 500;
 let saveTimeout: NodeJS.Timeout | null = null;
 
 /**
+ * Get default properties and styling for a component type
+ * Ensures new components have visible content instead of being empty
+ * 
+ * @param type - HTML element type (div, button, span, etc.)
+ * @param displayName - Component display name for default text
+ * @returns Object with default properties and styling
+ */
+function getDefaultsForType(type: string, displayName: string): {
+  properties: Record<string, any>;
+  styling: { baseClasses: string[] };
+} {
+  // Default styling for all components - add padding and border so they're visible
+  const defaultStyling = { baseClasses: ['p-4', 'border', 'border-gray-200', 'rounded'] };
+  
+  switch (type) {
+    case 'button':
+      return {
+        properties: {
+          label: { type: 'static', dataType: 'string', value: displayName || 'Button' },
+        },
+        styling: { baseClasses: ['px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded', 'hover:bg-blue-600'] },
+      };
+    
+    case 'span':
+    case 'p':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: displayName || 'Text content' },
+        },
+        styling: { baseClasses: ['text-gray-700'] },
+      };
+    
+    case 'h1':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: displayName || 'Heading 1' },
+        },
+        styling: { baseClasses: ['text-4xl', 'font-bold', 'text-gray-900'] },
+      };
+    
+    case 'h2':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: displayName || 'Heading 2' },
+        },
+        styling: { baseClasses: ['text-3xl', 'font-bold', 'text-gray-900'] },
+      };
+    
+    case 'h3':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: displayName || 'Heading 3' },
+        },
+        styling: { baseClasses: ['text-2xl', 'font-bold', 'text-gray-900'] },
+      };
+    
+    case 'input':
+      return {
+        properties: {
+          placeholder: { type: 'static', dataType: 'string', value: 'Enter text...' },
+          type: { type: 'static', dataType: 'string', value: 'text' },
+        },
+        styling: { baseClasses: ['px-3', 'py-2', 'border', 'border-gray-300', 'rounded', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'] },
+      };
+    
+    case 'textarea':
+      return {
+        properties: {
+          placeholder: { type: 'static', dataType: 'string', value: 'Enter text...' },
+        },
+        styling: { baseClasses: ['px-3', 'py-2', 'border', 'border-gray-300', 'rounded', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'min-h-[100px]'] },
+      };
+    
+    case 'a':
+      return {
+        properties: {
+          href: { type: 'static', dataType: 'string', value: '#' },
+          text: { type: 'static', dataType: 'string', value: displayName || 'Link' },
+        },
+        styling: { baseClasses: ['text-blue-600', 'hover:text-blue-800', 'underline'] },
+      };
+    
+    case 'img':
+      return {
+        properties: {
+          src: { type: 'static', dataType: 'string', value: 'https://via.placeholder.com/300x200' },
+          alt: { type: 'static', dataType: 'string', value: displayName || 'Image' },
+        },
+        styling: { baseClasses: ['max-w-full', 'h-auto', 'rounded'] },
+      };
+    
+    case 'ul':
+    case 'ol':
+      return {
+        properties: {},
+        styling: { baseClasses: ['list-disc', 'list-inside', 'p-4'] },
+      };
+    
+    case 'li':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: 'List item' },
+        },
+        styling: { baseClasses: ['py-1'] },
+      };
+    
+    case 'section':
+    case 'article':
+    case 'div':
+      return {
+        properties: {},
+        styling: { baseClasses: ['p-4', 'border', 'border-dashed', 'border-gray-300', 'min-h-[50px]'] },
+      };
+    
+    case 'header':
+      return {
+        properties: {},
+        styling: { baseClasses: ['p-4', 'bg-gray-100', 'border-b', 'border-gray-200'] },
+      };
+    
+    case 'footer':
+      return {
+        properties: {},
+        styling: { baseClasses: ['p-4', 'bg-gray-100', 'border-t', 'border-gray-200'] },
+      };
+    
+    case 'nav':
+      return {
+        properties: {},
+        styling: { baseClasses: ['p-4', 'flex', 'gap-4', 'bg-gray-50'] },
+      };
+    
+    case 'form':
+      return {
+        properties: {},
+        styling: { baseClasses: ['p-4', 'space-y-4', 'border', 'border-gray-200', 'rounded'] },
+      };
+    
+    case 'label':
+      return {
+        properties: {
+          text: { type: 'static', dataType: 'string', value: displayName || 'Label' },
+        },
+        styling: { baseClasses: ['text-sm', 'font-medium', 'text-gray-700'] },
+      };
+    
+    case 'select':
+      return {
+        properties: {},
+        styling: { baseClasses: ['px-3', 'py-2', 'border', 'border-gray-300', 'rounded', 'bg-white'] },
+      };
+    
+    default:
+      // For any other element, add basic visible styling
+      return {
+        properties: {},
+        styling: defaultStyling,
+      };
+  }
+}
+
+/**
  * Manifest store implementation
  * 
  * Manages the component manifest, providing CRUD operations,
@@ -323,16 +485,17 @@ export const useManifestStore = create<ManifestState>()(
         }
       }
 
-      // Create component
+      // Get default properties and styling for this element type
+      const defaults = getDefaultsForType(options.type, options.displayName);
+
+      // Create component with defaults (user options override defaults)
       const component: Component = {
         id,
         displayName: options.displayName,
         type: options.type,
         category: options.category || 'custom',
-        properties: options.properties || {},
-        styling: options.styling || {
-          baseClasses: [],
-        },
+        properties: options.properties || defaults.properties,
+        styling: options.styling || defaults.styling,
         children: [],
         metadata: createComponentMetadata('user'),
       };

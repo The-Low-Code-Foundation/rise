@@ -486,6 +486,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         
         // Reload recent projects
         await get().loadRecentProjects();
+        
+        // Load manifest into manifestStore (Bug fix: was missing for new projects)
+        const { useManifestStore } = await import('./manifestStore');
+        await useManifestStore.getState().loadFromFile(result.project.path);
       } else {
         // Failed
         set({

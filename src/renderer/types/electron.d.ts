@@ -129,6 +129,70 @@ export interface BudgetConfig {
 }
 
 /**
+ * Code generation request parameters (Task 3.3)
+ */
+export interface GenerateCodeRequest {
+  /** Absolute path to project root */
+  projectPath: string;
+  
+  /** Complete manifest object */
+  manifest: any;
+  
+  /** If true, only regenerate changed components (default: true) */
+  incremental?: boolean;
+}
+
+/**
+ * Code generation result (Task 3.3)
+ */
+export interface GenerateCodeResult {
+  /** Whether generation succeeded */
+  success: boolean;
+  
+  /** Generation summary on success */
+  data?: {
+    filesWritten: number;
+    filesFailed: number;
+    durationMs: number;
+    breakdown?: {
+      added: number;
+      modified: number;
+      removed: number;
+      appRegenerated: boolean;
+    };
+  };
+  
+  /** Error message on failure */
+  error?: string;
+  
+  /** Detailed errors (if any files failed) */
+  errors?: Array<{
+    filepath: string;
+    error: string;
+  }>;
+}
+
+/**
+ * Code Generation API interface (Task 3.3)
+ * 
+ * Controls code generation from manifest to files.
+ * Calls FileManager in main process via IPC.
+ */
+export interface GenerationAPI {
+  /** Generate files from manifest (incremental by default) */
+  generate: (request: GenerateCodeRequest) => Promise<GenerateCodeResult>;
+  
+  /** Force full regeneration of all files */
+  regenerateAll: (request: GenerateCodeRequest) => Promise<GenerateCodeResult>;
+  
+  /** Cleanup FileManager when project closes */
+  cleanup: () => Promise<{ success: boolean }>;
+  
+  /** Get current FileManager status (for debugging) */
+  status: () => Promise<{ initialized: boolean; projectPath: string | null }>;
+}
+
+/**
  * AI API interface for component generation
  */
 export interface AIAPI {
@@ -254,6 +318,9 @@ export interface ElectronAPI {
   
   // AI system (Task 2.4A)
   ai: AIAPI;
+  
+  // Code generation system (Task 3.3)
+  generation: GenerationAPI;
 }
 
 /**

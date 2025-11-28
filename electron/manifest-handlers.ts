@@ -86,6 +86,7 @@ interface ValidationError {
 }
 
 // Temporary helper until import issues fixed
+// Creates an empty manifest with no components - users add them via the UI
 function createEmptyManifest(projectName: string): Manifest {
   return {
     schemaVersion: '1.0.0',
@@ -106,6 +107,8 @@ function createEmptyManifest(projectName: string): Manifest {
         version: '1.0.0',
       },
     },
+    // Start with no components - user adds them via the UI
+    // Using valid HTML element types (div, button, etc.) not abstract types
     components: {},
   };
 }

@@ -23,6 +23,7 @@ import { PreviewChannels, ViteServerState } from '../src/main/preview/types';
 import type { CreateProjectParams } from '../src/main/project/types';
 import { registerManifestHandlers } from './manifest-handlers';
 import { registerAIHandlers, cleanupAIHandlers } from './ai-handlers';
+import { setupGenerationHandlers, cleanupGenerationHandlers } from './generation-handlers';
 
 // ProjectManager instance (initialized in setupIpcHandlers)
 let projectManager: ProjectManager;
@@ -538,6 +539,9 @@ export async function setupIpcHandlers(): Promise<void> {
   // ===== AI Handlers (Task 2.4A) =====
   registerAIHandlers();
 
+  // ===== Code Generation Handlers (Task 3.3) =====
+  setupGenerationHandlers();
+
   console.log('[IPC] Handlers registered successfully');
 }
 
@@ -573,6 +577,9 @@ export function cleanupIpcHandlers(): void {
   
   // AI handlers (Task 2.4A)
   cleanupAIHandlers();
+  
+  // Generation handlers (Task 3.3)
+  cleanupGenerationHandlers();
   
   console.log('[IPC] Handlers cleaned up');
 }

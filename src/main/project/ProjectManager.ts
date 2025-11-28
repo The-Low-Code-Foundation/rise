@@ -324,7 +324,9 @@ export class ProjectManager {
     const publicDir = path.join(projectPath, 'public');
     await fs.mkdir(publicDir, { recursive: true });
     
-    // Generate manifest.json (empty but valid Level 1)
+    // Generate manifest.json (empty for clean start)
+    // NOTE: Start with empty components - user will add their own
+    // Using actual HTML elements (div, button, etc.) rather than abstract types
     const manifest = {
       schemaVersion: '1.0.0',
       level: 1,
@@ -334,31 +336,8 @@ export class ProjectManager {
         createdAt: new Date().toISOString(),
         modifiedAt: new Date().toISOString(),
       },
-      components: {
-        comp_app_root: {
-          id: 'comp_app_root',
-          displayName: 'App',
-          type: 'CompositeComponent',
-          category: 'layout',
-          properties: {
-            title: {
-              type: 'static',
-              dataType: 'string',
-              value: 'Welcome to Rise',
-            },
-          },
-          children: [],
-          styling: {
-            baseClasses: ['app-container'],
-          },
-          metadata: {
-            description: 'Root application component',
-          },
-        },
-      },
-      componentTree: {
-        rootId: 'comp_app_root',
-      },
+      // Start with no components - user adds them via the UI
+      components: {},
     };
     
     await fs.writeFile(
@@ -479,6 +458,7 @@ export default defineConfig({
     );
     
     // Generate index.html
+    // NOTE: Uses .jsx extension to match code generator output (not .tsx)
     const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
@@ -488,7 +468,7 @@ export default defineConfig({
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
 `;
@@ -499,8 +479,8 @@ export default defineConfig({
       'utf-8'
     );
     
-    // Generate src/App.tsx
-    const appTsx = `import React from 'react'
+    // Generate src/App.jsx (uses .jsx to match code generator output)
+    const appJsx = `import React from 'react'
 import './App.css'
 
 function App() {
@@ -519,18 +499,18 @@ export default App
 `;
     
     await fs.writeFile(
-      path.join(srcDir, 'App.tsx'),
-      appTsx,
+      path.join(srcDir, 'App.jsx'),
+      appJsx,
       'utf-8'
     );
     
-    // Generate src/main.tsx
-    const mainTsx = `import React from 'react'
+    // Generate src/main.jsx (uses .jsx to match code generator output)
+    const mainJsx = `import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
+import App from './App'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
@@ -538,8 +518,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 `;
     
     await fs.writeFile(
-      path.join(srcDir, 'main.tsx'),
-      mainTsx,
+      path.join(srcDir, 'main.jsx'),
+      mainJsx,
       'utf-8'
     );
     

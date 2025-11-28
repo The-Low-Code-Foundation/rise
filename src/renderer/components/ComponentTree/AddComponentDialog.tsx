@@ -30,11 +30,20 @@ import { Modal } from '../Modal';
 /**
  * Component type options for quick selection
  */
+/**
+ * Component type options for quick selection
+ * IMPORTANT: All values must be valid HTML element names (lowercase)
+ * or React component names (PascalCase)
+ */
 const COMPONENT_TYPES = [
   { value: 'div', label: 'Container (div)' },
+  { value: 'span', label: 'Text (span)' },
+  { value: 'p', label: 'Paragraph (p)' },
+  { value: 'h1', label: 'Heading 1 (h1)' },
+  { value: 'h2', label: 'Heading 2 (h2)' },
+  { value: 'h3', label: 'Heading 3 (h3)' },
   { value: 'button', label: 'Button' },
   { value: 'input', label: 'Input' },
-  { value: 'text', label: 'Text (span)' },
   { value: 'section', label: 'Section' },
   { value: 'article', label: 'Article' },
   { value: 'header', label: 'Header' },
@@ -44,6 +53,10 @@ const COMPONENT_TYPES = [
   { value: 'li', label: 'List Item (li)' },
   { value: 'a', label: 'Link (a)' },
   { value: 'img', label: 'Image' },
+  { value: 'form', label: 'Form' },
+  { value: 'label', label: 'Label' },
+  { value: 'textarea', label: 'Text Area' },
+  { value: 'select', label: 'Select' },
   { value: 'custom', label: 'Custom Component' },
 ];
 

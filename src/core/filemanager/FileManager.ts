@@ -545,6 +545,20 @@ export class FileManager extends EventEmitter implements IFileManager {
         }
       }
 
+      // Step 5b: Generate main.jsx if not already generated
+      // This ensures the template's main.jsx is replaced on first generation
+      if (!this.mainJsxGenerated) {
+        const mainCode = await this.appGenerator.generateMainJsx();
+        const mainResult = await this.fileWriter.writeFile(this.paths.mainJsx, mainCode);
+        
+        if (mainResult.success) {
+          filesWritten++;
+          this.mainJsxGenerated = true;
+        } else {
+          errors.push(mainResult);
+        }
+      }
+
       // Step 6: Update change detector cache
       this.changeDetector.updateCache(manifest.components);
 
