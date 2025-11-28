@@ -1,36 +1,63 @@
 # Documentation Index
 
-Welcome to the Visual Low-Code Builder documentation! This guide will help you navigate the comprehensive documentation suite.
+> **Last Updated**: November 28, 2025  
+> **Project Status**: Phase 3 In Progress
+
+Welcome to the Rise Visual Low-Code Builder documentation! This guide will help you navigate the comprehensive documentation suite.
+
+---
+
+## 📊 Implementation Progress
+
+| Phase | Status | Key Deliverables |
+|-------|--------|------------------|
+| **Phase 0** | ✅ Complete | FileChangeTracker, SchemaValidator, APIKeyManager, Testing infra |
+| **Phase 1** | ✅ Complete | Electron shell, UI layout, Project management, Preview foundation |
+| **Phase 2** | ✅ Complete | Component tree, Properties panel, Manifest persistence, AI generation |
+| **Phase 3** | 🔄 In Progress | ReactCodeGenerator ✅, FileManager ✅, Live preview 🔄 |
+| **Phase 4** | 🔵 Not Started | Testing, error handling, performance, UX polish |
+| **Phase 5** | 🔵 Not Started | Documentation, packaging, beta release |
+
+---
 
 ## 📚 Quick Navigation
 
 ### Start Here
-1. **[README.md](./README.md)** - Project overview and introduction
+1. **[README.md](./README.md)** - Project overview, progress, and introduction
 2. **[GETTING_STARTED.md](./docs/GETTING_STARTED.md)** - Setup instructions and first steps
 
 ### Core Architecture
 3. **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Complete system design and technology stack
 4. **[FILE_STRUCTURE_SPEC.md](./docs/FILE_STRUCTURE_SPEC.md)** - Project file organization
-5. **[COMPONENT_SCHEMA.md](./docs/COMPONENT_SCHEMA.md)** - ✅ **COMPLETE** - Definitive JSON manifest format
+5. **[COMPONENT_SCHEMA.md](./docs/COMPONENT_SCHEMA.md)** - JSON manifest format *(has pending updates)*
+6. **[SCHEMA_LEVELS.md](./docs/SCHEMA_LEVELS.md)** - Feature progression (Level 1→2→3)
 
 ### Key Features
-6. **[DATA_FLOW.md](./docs/DATA_FLOW.md)** - Props, state, and reactive variables
-7. **[EXPRESSION_SYSTEM.md](./docs/EXPRESSION_SYSTEM.md)** - Dynamic properties and scripting
-8. **[DEBUGGER_DESIGN.md](./docs/DEBUGGER_DESIGN.md)** - Step-through debugging system
+7. **[DATA_FLOW.md](./docs/DATA_FLOW.md)** - Props, state, and reactive variables
+8. **[EXPRESSION_SYSTEM.md](./docs/EXPRESSION_SYSTEM.md)** - Dynamic properties *(Level 2 - Post-MVP)*
+9. **[DEBUGGER_DESIGN.md](./docs/DEBUGGER_DESIGN.md)** - Step-through debugging *(Level 3 - Future)*
 
 ### Extensibility
-9. **[PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)** - Framework adapter interface
-10. **[BIDIRECTIONAL_SYNC.md](./docs/BIDIRECTIONAL_SYNC.md)** - Code-to-manifest reverse engineering (stretch goal)
-11. **[HOSTED_BACKEND.md](./docs/HOSTED_BACKEND.md)** - Optional Parse Server backend with scheduling (Future)
+10. **[PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md)** - Framework adapter interface *(Post-MVP)*
+11. **[BIDIRECTIONAL_SYNC.md](./docs/BIDIRECTIONAL_SYNC.md)** - Code-to-manifest sync *(Post-MVP)*
+12. **[HOSTED_BACKEND.md](./docs/HOSTED_BACKEND.md)** - Parse Server backend *(Future)*
 
 ### Development & Best Practices
-12. **[PERFORMANCE.md](./docs/PERFORMANCE.md)** - Performance optimization strategy and benchmarks
-13. **[SECURITY.md](./docs/SECURITY.md)** - Two-tier security model and expression sandboxing
-14. **[TESTING_STRATEGY.md](./docs/TESTING_STRATEGY.md)** - Comprehensive testing approach and quality assurance
+13. **[PERFORMANCE.md](./docs/PERFORMANCE.md)** - Performance optimization strategy
+14. **[SECURITY.md](./docs/SECURITY.md)** / **[SECURITY_SPEC.md](./docs/SECURITY_SPEC.md)** - Security model
+15. **[TESTING_STRATEGY.md](./docs/TESTING_STRATEGY.md)** - Testing approach and quality assurance
 
-### Planning & Learning
-15. **[MVP_ROADMAP.md](./docs/MVP_ROADMAP.md)** - Development phases, timeline, and resource allocation
-16. **[EXAMPLES.md](./docs/EXAMPLES.md)** - Real-world component examples and code patterns
+### Planning & Implementation
+16. **[MVP_ROADMAP.md](./docs/MVP_ROADMAP.md)** - Development phases and timeline *(Updated Nov 28)*
+17. **[CLINE_IMPLEMENTATION_PLAN.md](./CLINE_IMPLEMENTATION_PLAN.md)** - AI-assisted development guide
+18. **[EXAMPLES.md](./docs/EXAMPLES.md)** - Real-world component examples
+
+### Implementation Tracking
+19. **[.implementation/](/.implementation/)** - Detailed task documentation
+    - Phase 0: Foundation tasks (0.1-0.4) ✅
+    - Phase 1: Application shell tasks (1.1-1.4) ✅
+    - Phase 2: Component management tasks (2.1-2.4) ✅
+    - Phase 3: Code generation tasks (3.1-3.3) 🔄
 
 ---
 
@@ -38,12 +65,12 @@ Welcome to the Visual Low-Code Builder documentation! This guide will help you n
 
 ### For Project Managers
 **Recommended order**:
-1. README.md (overview)
-2. MVP_ROADMAP.md (timeline and resources)
+1. README.md (overview & progress)
+2. MVP_ROADMAP.md (timeline and status)
 3. ARCHITECTURE.md (technical approach)
-4. COMPONENT_SCHEMA.md (data structure)
+4. SCHEMA_LEVELS.md (feature progression)
 
-**Focus on**: Phases, estimates, success criteria, technical foundation
+**Focus on**: Phases, estimates, success criteria, current progress
 
 ---
 
@@ -53,13 +80,21 @@ Welcome to the Visual Low-Code Builder documentation! This guide will help you n
 2. ARCHITECTURE.md (system design)
 3. COMPONENT_SCHEMA.md (JSON format)
 4. FILE_STRUCTURE_SPEC.md (project layout)
-5. DATA_FLOW.md (how data works)
-6. EXPRESSION_SYSTEM.md (dynamic properties)
-7. SECURITY.md (security model)
-8. TESTING_STRATEGY.md (testing approach)
-9. EXAMPLES.md (code patterns)
+5. CLINE_IMPLEMENTATION_PLAN.md (development approach)
+6. `.implementation/` folder (task details)
 
-**Focus on**: Technical implementation, code examples, best practices, security, testing
+**Focus on**: Technical implementation, code patterns, task documentation
+
+---
+
+### For AI Development (Cline)
+**Essential reading**:
+1. `.clinerules/` folder - Project rules and standards
+2. SCHEMA_LEVELS.md - Level 1 boundaries (CRITICAL)
+3. SECURITY_SPEC.md - Security requirements
+4. Relevant `.implementation/` task file
+
+**Key rule**: Check SCHEMA_LEVELS.md before implementing ANY feature
 
 ---
 
@@ -69,66 +104,46 @@ Welcome to the Visual Low-Code Builder documentation! This guide will help you n
 2. GETTING_STARTED.md (user workflows)
 3. COMPONENT_SCHEMA.md (component structure)
 4. DEBUGGER_DESIGN.md (UI examples)
-5. EXPRESSION_SYSTEM.md (property editors)
 
 **Focus on**: User interfaces, workflows, visual examples
 
 ---
 
-### For Community Contributors
-**Recommended order**:
-1. README.md (project overview)
-2. GETTING_STARTED.md (setup)
-3. COMPONENT_SCHEMA.md (data structures)
-4. PLUGIN_SYSTEM.md (extensibility)
-
-**Focus on**: Plugin development, contribution guidelines, standards
-
----
-
 ## 🎯 Document Status
 
-| Document | Status | Completeness |
-|----------|--------|--------------|
-| README.md | ✅ Complete | 100% |
-| GETTING_STARTED.md | ✅ Complete | 100% |
-| ARCHITECTURE.md | ✅ Complete | 100% |
-| FILE_STRUCTURE_SPEC.md | ✅ Complete | 100% |
-| DATA_FLOW.md | ✅ Complete | 100% |
-| EXPRESSION_SYSTEM.md | ✅ Complete | 100% |
-| DEBUGGER_DESIGN.md | ✅ Complete | 100% |
-| PLUGIN_SYSTEM.md | ✅ Complete | 100% |
-| BIDIRECTIONAL_SYNC.md | ✅ Complete | 100% |
-| PERFORMANCE.md | ✅ Complete | 100% |
-| SECURITY.md | ✅ Complete | 100% |
-| TESTING_STRATEGY.md | ✅ Complete | 100% |
-| MVP_ROADMAP.md | ✅ Complete | 100% |
-| EXAMPLES.md | ✅ Complete | 100% |
-| **COMPONENT_SCHEMA.md** | ✅ **COMPLETE** | 100% |
+### Core Documentation
 
----
+| Document | Status | Last Updated | Notes |
+|----------|--------|--------------|-------|
+| README.md | ✅ Updated | Nov 28, 2025 | Progress tracking added |
+| MVP_ROADMAP.md | ✅ Updated | Nov 28, 2025 | Phase statuses current |
+| ARCHITECTURE.md | ✅ Complete | Oct 25, 2025 | No changes needed |
+| SCHEMA_LEVELS.md | ✅ Complete | Oct 25, 2025 | Defines L1/L2/L3 boundaries |
+| COMPONENT_SCHEMA.md | ⚠️ Has pending updates | Oct 25, 2025 | Level indicators proposed |
+| FILE_STRUCTURE_SPEC.md | ✅ Complete | Oct 25, 2025 | No changes needed |
+| SECURITY_SPEC.md | ✅ Complete | Oct 25, 2025 | Implemented in Phase 0 |
+| TESTING_STRATEGY.md | ✅ Complete | Oct 25, 2025 | No changes needed |
 
-## 🏆 Architecture Complete!
+### Feature Documentation
 
-**🎉 All core architecture documentation is now complete!** The Rise project has a fully-defined technical foundation with:
+| Document | Status | Relevance |
+|----------|--------|-----------|
+| DATA_FLOW.md | ✅ Complete | Level 2+ reference |
+| EXPRESSION_SYSTEM.md | ✅ Complete | Level 2 - Post-MVP |
+| DEBUGGER_DESIGN.md | ✅ Complete | Level 3 - Future |
+| PLUGIN_SYSTEM.md | ✅ Complete | Post-MVP reference |
+| BIDIRECTIONAL_SYNC.md | ✅ Complete | Post-MVP reference |
+| HOSTED_BACKEND.md | ✅ Complete | Future - properly marked |
+| PERFORMANCE.md | ✅ Complete | Reference as needed |
+| EXAMPLES.md | ✅ Complete | Reference for patterns |
 
-### ✅ **Foundation Layer**
-- **ARCHITECTURE.md**: System design and technology stack
-- **FILE_STRUCTURE_SPEC.md**: Project organization standards
-- **COMPONENT_SCHEMA.md**: Complete JSON manifest specification
+### Implementation Documentation
 
-### ✅ **Feature Layer**  
-- **DATA_FLOW.md**: State management and component communication
-- **EXPRESSION_SYSTEM.md**: User expressions and AI integration
-- **DEBUGGER_DESIGN.md**: Visual debugging implementation
-
-### ✅ **Extensibility Layer**
-- **PLUGIN_SYSTEM.md**: Framework-agnostic plugin architecture  
-- **BIDIRECTIONAL_SYNC.md**: Code-to-manifest reverse engineering
-
-### ✅ **Implementation Layer**
-- **MVP_ROADMAP.md**: Development phases and timeline
-- **GETTING_STARTED.md**: Setup and development workflow
+| Document | Status | Notes |
+|----------|--------|-------|
+| CLINE_IMPLEMENTATION_PLAN.md | ⚠️ Needs status markers | Phase statuses not marked |
+| DOCUMENTATION_INDEX.md | ✅ Updated | Nov 28, 2025 - this document |
+| GLOSSARY.md | ✅ Complete | Terminology reference |
 
 ---
 
@@ -137,94 +152,94 @@ Welcome to the Visual Low-Code Builder documentation! This guide will help you n
 ### "How do I...?"
 
 **...understand the JSON structure?**
-→ [COMPONENT_SCHEMA.md](./docs/COMPONENT_SCHEMA.md) - Complete specification with examples
+→ [COMPONENT_SCHEMA.md](./docs/COMPONENT_SCHEMA.md) - Complete specification
 
 **...set up the development environment?**
 → [GETTING_STARTED.md](./docs/GETTING_STARTED.md) - Installation section
 
-**...understand the file structure?**
-→ [FILE_STRUCTURE_SPEC.md](./docs/FILE_STRUCTURE_SPEC.md)
+**...understand what's in MVP vs post-MVP?**
+→ [SCHEMA_LEVELS.md](./docs/SCHEMA_LEVELS.md) - Level 1/2/3 boundaries
 
-**...create a plugin for Vue/Svelte?**
-→ [PLUGIN_SYSTEM.md](./docs/PLUGIN_SYSTEM.md) - Plugin Development section
+**...see what's been implemented?**
+→ [MVP_ROADMAP.md](./docs/MVP_ROADMAP.md) - Current progress section
+→ [.implementation/](/.implementation/) - Detailed task logs
 
-**...understand how components communicate?**
-→ [DATA_FLOW.md](./docs/DATA_FLOW.md)
+**...understand the code generation system?**
+→ [.implementation/phase-3-code-generation-and-preview/task-3.1-react-code-generator.md](/.implementation/phase-3-code-generation-and-preview/task-3.1-react-code-generator.md)
 
-**...add expressions to properties?**
-→ [EXPRESSION_SYSTEM.md](./docs/EXPRESSION_SYSTEM.md)
+**...understand how AI generation works?**
+→ [.implementation/phase-2-component-management/task-2.4-AI-component-generation.md](/.implementation/phase-2-component-management/task-2.4-AI-component-generation.md)
 
-**...implement the debugger?**
-→ [DEBUGGER_DESIGN.md](./docs/DEBUGGER_DESIGN.md) - Implementation Strategy
+**...understand the security model?**
+→ [SECURITY_SPEC.md](./docs/SECURITY_SPEC.md) - Security architecture
+→ [.implementation/phase-0-foundation/task-0.2-security-foundation.md](/.implementation/phase-0-foundation/task-0.2-security-foundation.md)
 
-**...know what to build first?**
-→ [MVP_ROADMAP.md](./docs/MVP_ROADMAP.md) - Phase breakdown
-
-**...understand security and sandboxing?**
-→ [SECURITY.md](./docs/SECURITY.md) - Two-tier security model
-
-**...optimize performance?**
-→ [PERFORMANCE.md](./docs/PERFORMANCE.md) - Performance strategy and benchmarks
-
-**...set up testing?**
-→ [TESTING_STRATEGY.md](./docs/TESTING_STRATEGY.md) - Testing approach and tools
-
-**...see real-world examples?**
-→ [EXAMPLES.md](./docs/EXAMPLES.md) - Component examples and patterns
+**...learn about the future hosted backend?**
+→ [HOSTED_BACKEND.md](./docs/HOSTED_BACKEND.md) - Parse Server plans
 
 ---
 
-## 📝 Key Decisions Documented
+## 📋 Pending Documentation Tasks
 
-### Architecture Decisions
+### High Priority
 
-| Decision | Document | Section |
-|----------|----------|---------|
-| Electron desktop app | ARCHITECTURE.md | Technology Stack |
-| React first, plugins later | PLUGIN_SYSTEM.md | Design Principles |
-| Standard Vite project structure | FILE_STRUCTURE_SPEC.md | Overview |
-| Hybrid semantic JSON schema | COMPONENT_SCHEMA.md | Design Decisions |
-| User expressions + global functions | COMPONENT_SCHEMA.md | Expression System |
-| Flat component hierarchy | COMPONENT_SCHEMA.md | Component Hierarchy |
-| Multi-layer state system | DATA_FLOW.md | The Three Patterns |
-| AI as copilot approach | COMPONENT_SCHEMA.md | AI Integration |
-| Framework agnostic plugins | PLUGIN_SYSTEM.md | Plugin Architecture |
-| Zero vendor lock-in | COMPONENT_SCHEMA.md | Philosophy |
+1. **Apply COMPONENT_SCHEMA.md updates**
+   - Add schema level indicators throughout
+   - Mark Level 2/3 examples clearly
+   - Add "MVP Limitations" section
+   - Estimated time: 2-3 hours
 
----
+2. **Add status markers to CLINE_IMPLEMENTATION_PLAN.md**
+   - Mark Phase 0-2 as complete
+   - Mark Phase 3 as in progress
+   - Estimated time: 30 minutes
 
-## 🚀 Implementation Ready
+### Medium Priority
 
-**Status**: All core architecture decisions are finalized and documented. The project is ready for implementation!
+3. **Create implementation summary**
+   - What was built in each phase
+   - Key decisions and their rationale
+   - Patterns discovered
+   - Estimated time: 2 hours
 
-### **Next Steps**:
-1. **Begin MVP development** following the roadmap
-2. **Implement Manifest Manager** using the component schema
-3. **Build React plugin** as reference implementation
-4. **Create expression editor** with user JavaScript support
-5. **Develop AI copilot integration** with code review features
+4. **Update code examples**
+   - Add examples from actual implementation
+   - Show generated code output
+   - Estimated time: 1 hour
+
+### Low Priority (Post-Phase 3)
+
+5. **Create user guide draft**
+6. **Add troubleshooting section**
+7. **Document keyboard shortcuts**
 
 ---
 
 ## 📊 Documentation Statistics
 
-- **Total Documents**: 15
-- **Total Words**: ~95,000
+- **Total Documents**: 18+ core docs
+- **Implementation Tasks Documented**: 15+ task files
 - **Code Examples**: 350+
 - **Diagrams**: 40+
-- **Tables**: 45+
-- **Schema Examples**: 75+
 
 ---
 
-## 🔄 Documentation Updates
+## 🔄 Documentation Maintenance
 
-This documentation is a living resource. As the project evolves:
+### Update Triggers
 
-1. **Weekly Reviews**: Check accuracy against implementation
-2. **Version Tags**: Match docs to software versions
-3. **Community Input**: Accept PRs for improvements
-4. **Examples**: Add real-world examples as users build
+Update documentation when:
+1. ✅ Completing a phase (update MVP_ROADMAP.md, README.md)
+2. ✅ Making key decisions (document in task file + relevant doc)
+3. ✅ Changing architecture (update ARCHITECTURE.md)
+4. ✅ Adding features (update relevant feature doc)
+
+### Review Schedule
+
+- **After each task**: Update task file in `.implementation/`
+- **After each phase**: Update MVP_ROADMAP.md, README.md
+- **Weekly**: Check accuracy against implementation
+- **Before release**: Full documentation audit
 
 ---
 
@@ -232,77 +247,49 @@ This documentation is a living resource. As the project evolves:
 
 Found an error? Have a suggestion?
 
-1. **Small fixes**: Open a PR directly
-2. **Big changes**: Open an issue first to discuss
-3. **New sections**: Propose in Discussions
+1. **Small fixes**: Note in task file or create issue
+2. **Big changes**: Discuss with project lead first
+3. **New sections**: Propose structure before writing
 
 **Style Guide**:
 - Clear, concise language
 - Code examples for concepts
 - Diagrams for complex flows
 - Cross-reference related docs
-
----
-
-## 📧 Documentation Feedback
-
-Questions about the docs? 
-
-- **Missing info**: Open an issue tagged `documentation`
-- **Unclear section**: Comment with specific questions
-- **Request examples**: Tell us what you're trying to do
+- Include "Last Updated" dates
 
 ---
 
 ## 🎓 Learning Path
 
-**Beginner** (Never used low-code tools):
-1. README.md
-2. GETTING_STARTED.md → Tutorial section
-3. COMPONENT_SCHEMA.md → Examples
-4. DATA_FLOW.md → Examples
+### Beginner (New to Rise)
+1. README.md - What is Rise?
+2. SCHEMA_LEVELS.md - What can it do?
+3. GETTING_STARTED.md - How to set up
 
-**Intermediate** (Some low-code experience):
-1. ARCHITECTURE.md → System overview
-2. COMPONENT_SCHEMA.md → Complete specification  
-3. PLUGIN_SYSTEM.md → Extensibility
-4. EXPRESSION_SYSTEM.md → Advanced features
+### Intermediate (Contributing)
+1. ARCHITECTURE.md - How it works
+2. COMPONENT_SCHEMA.md - Data structures
+3. MVP_ROADMAP.md - Current status
+4. `.implementation/` - How tasks are done
 
-**Advanced** (Ready to contribute):
-1. All documentation review
-2. PLUGIN_SYSTEM.md → Plugin development
-3. BIDIRECTIONAL_SYNC.md → Advanced features
-4. MVP_ROADMAP.md → Implementation plan
+### Advanced (Core development)
+1. All architecture docs
+2. CLINE_IMPLEMENTATION_PLAN.md - Development approach
+3. `.clinerules/` - AI development rules
+4. All `.implementation/` task files
 
 ---
 
-## 🎯 Component Schema Highlights
+## 🔮 Future Documentation
 
-The newly completed **COMPONENT_SCHEMA.md** is the cornerstone of the Rise architecture:
+These documents will be created as features are implemented:
 
-### **🎯 User Empowerment**
-- Custom JavaScript expressions with full freedom
-- Global functions for reusable logic  
-- Direct code editing in expression editor
-- User authorship tracking
-
-### **🤖 AI as Copilot**
-- Code review and suggestions
-- Rich metadata for AI understanding
-- User override system for all AI recommendations
-- Performance and security analysis
-
-### **🔓 Zero Lock-in**
-- Clean React/Vue/Svelte code generation
-- Standard project structures (Vite, webpack)
-- Framework-agnostic semantic abstractions
-- Deployable anywhere (Vercel, Netlify, AWS)
-
-### **🔮 Future-Proof**
-- Plugin system for any framework or library
-- Schema versioning and migration system
-- Community extension support via npm
-- Backend agnostic (Supabase, Firebase, custom)
+- **USER_GUIDE.md** - End-user documentation (Phase 5)
+- **API_REFERENCE.md** - Generated code API (Phase 5)
+- **TROUBLESHOOTING.md** - Common issues and solutions (Phase 4)
+- **CHANGELOG.md** - Version history (Phase 5)
+- **LOGIC_SYSTEM.md** - Node-based logic editor (Level 2)
 
 ---
 
@@ -310,6 +297,6 @@ The newly completed **COMPONENT_SCHEMA.md** is the cornerstone of the Rise archi
 
 ---
 
-**Last Updated**: October 25, 2025  
-**Documentation Status**: ✅ Complete  
-**Next Milestone**: Begin MVP Implementation
+**Last Updated**: November 28, 2025  
+**Documentation Status**: 🔄 Updated with current progress  
+**Next Review**: After Phase 3 completion
