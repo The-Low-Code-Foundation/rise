@@ -1,26 +1,30 @@
 /**
  * @file StylingEditor.tsx
- * @description Editor for component Tailwind CSS classes
+ * @description Editor for component Tailwind CSS classes and inline styles
  * 
  * @architecture Phase 2, Task 2.3B - Property Panel Editor
+ * @updated 2025-11-29 - Task 3.5bis: Added InlineStylesEditor and Tailwind autocomplete
  * @created 2025-11-26
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Tag-style class editor with add/remove
+ * @confidence 9/10 - Tag-style class editor with add/remove + inline styles
  * 
  * @see .implementation/phase-2-component-management/task-2.3-property-panel-editor.md
+ * @see .implementation/phase-3-code-generation-and-preview/task-3.5bis-property-panel-enhancements.md
  * @see src/renderer/store/manifestStore.ts - updateComponent action
  * 
  * PROBLEM SOLVED:
- * Users need to edit Tailwind CSS classes on components:
- * - View existing classes as tags
- * - Add new classes
+ * Users need to edit styling on components:
+ * - View existing Tailwind classes as tags
+ * - Add new classes with autocomplete suggestions
  * - Remove existing classes
+ * - See and edit inline CSS styles (Task 3.5bis)
  * - See custom CSS (read-only in Level 1)
  * 
  * SOLUTION:
- * Tag-based UI that shows classes as removable pills.
- * Text input with Enter or Add button to add new classes.
- * Updates manifestStore.updateComponent() on changes.
+ * - Tag-based UI shows classes as removable pills
+ * - Autocomplete dropdown for Tailwind class suggestions
+ * - InlineStylesEditor shows/edits CSS properties
+ * - Updates manifestStore.updateComponent() on changes
  * 
  * LAYOUT:
  * ┌─────────────────────────────────────────────────────┐
@@ -30,7 +34,13 @@
  * │ ┌─────────────────────────────────────────────────┐ │
  * │ │ [bg-blue-500 x] [text-white x] [px-4 x] [py-2 x]│ │
  * │ └─────────────────────────────────────────────────┘ │
- * │ [____________ Add class __________] [+]            │
+ * │ [flex_________________] ← autocomplete dropdown     │
+ * │                                                     │
+ * │ Inline Styles:                                      │
+ * │ ┌─────────────────────────────────────────────────┐ │
+ * │ │ ► Layout    (3 properties)                      │ │
+ * │ │ ► Flexbox   (2 properties)                      │ │
+ * │ └─────────────────────────────────────────────────┘ │
  * │                                                     │
  * │ Custom CSS: (read-only preview)                    │
  * │ ┌─────────────────────────────────────────────────┐ │
@@ -42,10 +52,24 @@
  * @performance-critical false
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
 import { PaintBrushIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useManifestStore } from '../../store/manifestStore';
+import { InlineStylesEditor } from './InlineStylesEditor';
+import { TAILWIND_CLASS_SUGGESTIONS } from '../../../core/templates/componentTemplates';
 import type { Component, ComponentStyling } from '../../../core/manifest/types';
+
+/**
+ * Flatten all Tailwind suggestions into a single searchable array
+ * Creates array of unique class names from all categories
+ */
+const ALL_TAILWIND_CLASSES: string[] = (() => {
+  const allClasses = new Set<string>();
+  Object.values(TAILWIND_CLASS_SUGGESTIONS).forEach((classes) => {
+    classes.forEach((cls) => allClasses.add(cls));
+  });
+  return Array.from(allClasses).sort();
+})();
 
 /**
  * Props for StylingEditor component
@@ -147,19 +171,131 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
     [baseClasses, freshComponent, updateComponent]
   );
 
+  // Autocomplete state
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+
   /**
-   * Handle Enter key in class input
-   * Adds the class when Enter is pressed
+   * Filter suggestions based on current input
+   * Matches classes that contain the input string (case-insensitive)
+   */
+  const filteredSuggestions = useMemo(() => {
+    if (!newClass.trim()) return [];
+    
+    const query = newClass.toLowerCase();
+    return ALL_TAILWIND_CLASSES
+      .filter((cls) => 
+        cls.toLowerCase().includes(query) && 
+        !baseClasses.includes(cls)
+      )
+      .slice(0, 15); // Limit to 15 suggestions
+  }, [newClass, baseClasses]);
+
+  /**
+   * Handle input change with autocomplete
+   */
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setNewClass(e.target.value);
+      setShowAutocomplete(true);
+      setSelectedIndex(0);
+    },
+    []
+  );
+
+  /**
+   * Handle suggestion selection
+   */
+  const handleSelectSuggestion = useCallback(
+    (suggestion: string) => {
+      // Add the selected class
+      if (!baseClasses.includes(suggestion)) {
+        const updatedClasses = [...baseClasses, suggestion];
+        const updatedStyling: ComponentStyling = {
+          ...freshComponent.styling,
+          baseClasses: updatedClasses,
+        };
+        updateComponent(freshComponent.id, { styling: updatedStyling });
+      }
+      
+      // Clear input and hide autocomplete
+      setNewClass('');
+      setShowAutocomplete(false);
+      inputRef.current?.focus();
+    },
+    [baseClasses, freshComponent, updateComponent]
+  );
+
+  /**
+   * Handle keyboard navigation in autocomplete
    */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddClass();
+        
+        // If autocomplete is showing and has selection, use that
+        if (showAutocomplete && filteredSuggestions.length > 0) {
+          handleSelectSuggestion(filteredSuggestions[selectedIndex]);
+        } else {
+          handleAddClass();
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (showAutocomplete && filteredSuggestions.length > 0) {
+          setSelectedIndex((prev) => 
+            prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+          );
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (showAutocomplete && filteredSuggestions.length > 0) {
+          setSelectedIndex((prev) => 
+            prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+          );
+        }
+      } else if (e.key === 'Escape') {
+        setShowAutocomplete(false);
+      } else if (e.key === 'Tab' && showAutocomplete && filteredSuggestions.length > 0) {
+        e.preventDefault();
+        handleSelectSuggestion(filteredSuggestions[selectedIndex]);
       }
     },
-    [handleAddClass]
+    [handleAddClass, showAutocomplete, filteredSuggestions, selectedIndex, handleSelectSuggestion]
   );
+
+  /**
+   * Close autocomplete when clicking outside
+   */
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        autocompleteRef.current && 
+        !autocompleteRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowAutocomplete(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  /**
+   * Scroll selected item into view
+   */
+  useEffect(() => {
+    if (showAutocomplete && autocompleteRef.current) {
+      const selectedEl = autocompleteRef.current.children[selectedIndex] as HTMLElement;
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedIndex, showAutocomplete]);
 
   return (
     <section>
@@ -203,33 +339,58 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
             </div>
           )}
 
-          {/* Add class input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newClass}
-              onChange={(e) => setNewClass(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Add class (e.g., bg-gray-100)"
-              className="flex-1 px-3 py-2 text-xs font-mono border border-gray-300 rounded
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={handleAddClass}
-              disabled={!newClass.trim()}
-              className="px-3 py-2 text-xs bg-blue-500 text-white rounded 
-                         hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Add class"
-              aria-label="Add class"
-            >
-              <PlusIcon className="w-4 h-4" />
-            </button>
+          {/* Add class input with autocomplete */}
+          <div className="relative">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={newClass}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => newClass.trim() && setShowAutocomplete(true)}
+                placeholder="Add class (e.g., flex, bg-gray-100)"
+                className="flex-1 px-3 py-2 text-xs font-mono border border-gray-300 rounded
+                           focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleAddClass}
+                disabled={!newClass.trim()}
+                className="px-3 py-2 text-xs bg-blue-500 text-white rounded 
+                           hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed
+                           transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Add class"
+                aria-label="Add class"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Autocomplete dropdown */}
+            {showAutocomplete && filteredSuggestions.length > 0 && (
+              <div 
+                ref={autocompleteRef}
+                className="absolute z-10 w-full mt-1 bg-white border border-gray-200 
+                           rounded-lg shadow-lg max-h-48 overflow-y-auto"
+              >
+                {filteredSuggestions.map((suggestion, index) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    className={`w-full px-3 py-1.5 text-left text-xs font-mono
+                               hover:bg-blue-50 transition-colors
+                               ${index === selectedIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Tip for multiple classes */}
           <p className="mt-1 text-xs text-gray-400">
-            Press Enter or click + to add. Separate multiple classes with spaces.
+            Type to search. Press Enter, Tab, or click to add. Separate multiple classes with spaces.
           </p>
         </div>
 
@@ -269,12 +430,16 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Inline Styles Editor (Task 3.5bis) */}
+        <InlineStylesEditor component={component} />
+
+        {/* Empty state - only show if no Tailwind classes AND no inline styles */}
         {baseClasses.length === 0 && 
+         !freshComponent.styling?.inlineStyles &&
          !component.styling?.conditionalClasses?.container?.length &&
          !component.styling?.customCSS && (
           <p className="text-xs text-gray-500 italic text-center py-2">
-            No styling defined. Add Tailwind classes above.
+            No styling defined. Add Tailwind classes or inline styles above.
           </p>
         )}
       </div>

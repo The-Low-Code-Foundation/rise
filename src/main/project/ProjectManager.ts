@@ -362,6 +362,7 @@ export class ProjectManager {
     );
     
     // Generate package.json
+    // Include Tailwind CSS and dependencies for styling
     const packageJson = {
       name: params.name,
       private: true,
@@ -380,6 +381,9 @@ export class ProjectManager {
         '@types/react': '^18.2.43',
         '@types/react-dom': '^18.2.17',
         '@vitejs/plugin-react': '^4.2.1',
+        autoprefixer: '^10.4.16',
+        postcss: '^8.4.32',
+        tailwindcss: '^3.4.0',
         typescript: '^5.3.3',
         vite: '^5.0.8',
       },
@@ -557,8 +561,13 @@ p {
       'utf-8'
     );
     
-    // Generate src/index.css
-    const indexCss = `:root {
+    // Generate src/index.css with Tailwind directives
+    // IMPORTANT: These directives are required for Tailwind to work
+    const indexCss = `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -572,8 +581,6 @@ p {
 
 body {
   min-height: 100vh;
-  display: flex;
-  place-items: center;
 }
 
 #root {
@@ -584,6 +591,41 @@ body {
     await fs.writeFile(
       path.join(srcDir, 'index.css'),
       indexCss,
+      'utf-8'
+    );
+    
+    // Generate tailwind.config.js
+    const tailwindConfig = `/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+`;
+    
+    await fs.writeFile(
+      path.join(projectPath, 'tailwind.config.js'),
+      tailwindConfig,
+      'utf-8'
+    );
+    
+    // Generate postcss.config.js
+    const postcssConfig = `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+`;
+    
+    await fs.writeFile(
+      path.join(projectPath, 'postcss.config.js'),
+      postcssConfig,
       'utf-8'
     );
     

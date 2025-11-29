@@ -247,11 +247,13 @@ export default RootApp;
     const header = this.buildMainCommentHeader();
 
     // main.jsx is fairly standard
+    // IMPORTANT: Include index.css import for Tailwind CSS to work
     const code = `import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 ${header}
 import App from './App';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -51,6 +51,7 @@ import {
   generateComponentId,
   createComponentMetadata,
 } from '../../core/manifest/types';
+import { templateRegistry } from '../../core/templates';
 import { useProjectStore } from './projectStore';
 import type { 
   ValidationError as IPCValidationError,
@@ -135,10 +136,21 @@ function getDefaultsForType(type: string, displayName: string): {
     case 'input':
       return {
         properties: {
+          label: { type: 'static', dataType: 'string', value: 'Label' },
           placeholder: { type: 'static', dataType: 'string', value: 'Enter text...' },
           type: { type: 'static', dataType: 'string', value: 'text' },
         },
-        styling: { baseClasses: ['px-3', 'py-2', 'border', 'border-gray-300', 'rounded', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'] },
+        styling: { baseClasses: ['w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500'] },
+      };
+
+    case 'checkbox':
+      return {
+        properties: {
+          label: { type: 'static', dataType: 'string', value: 'Checkbox label' },
+          checked: { type: 'static', dataType: 'boolean', value: false },
+          disabled: { type: 'static', dataType: 'boolean', value: false },
+        },
+        styling: { baseClasses: ['w-4', 'h-4', 'text-blue-600', 'border-gray-300', 'rounded', 'focus:ring-blue-500'] },
       };
     
     case 'textarea':
@@ -455,6 +467,12 @@ export const useManifestStore = create<ManifestState>()(
      * Generates unique ID, validates depth, and adds to manifest.
      * If parentId provided, adds as child of that component.
      * 
+     * TEMPLATE INTEGRATION (Task 3.5):
+     * - Looks up template from templateRegistry
+     * - Uses template defaults for properties and styling
+     * - Falls back to legacy getDefaultsForType for unknown types
+     * - Template displayName used if not provided
+     * 
      * @param options - Component creation options
      * @returns New component ID
      * @throws Error if max depth exceeded or parent not found
@@ -485,15 +503,45 @@ export const useManifestStore = create<ManifestState>()(
         }
       }
 
-      // Get default properties and styling for this element type
-      const defaults = getDefaultsForType(options.type, options.displayName);
+      // Try to get template-based defaults first (Task 3.5)
+      // Fall back to legacy getDefaultsForType if no template found
+      const template = templateRegistry.getTemplate(options.type);
+      let defaults: { 
+        properties: Record<string, any>; 
+        styling: { baseClasses: string[]; inlineStyles?: Record<string, string> } 
+      };
+      
+      if (template) {
+        // Use template defaults (Task 3.5) - now includes inlineStyles
+        const templateDefaults = templateRegistry.buildDefaults(options.type);
+        defaults = {
+          properties: templateDefaults.properties,
+          styling: {
+            baseClasses: templateDefaults.styling.baseClasses,
+            inlineStyles: templateDefaults.styling.inlineStyles,
+          },
+        };
+      } else {
+        // Fall back to legacy defaults for unknown types
+        defaults = getDefaultsForType(options.type, options.displayName);
+      }
+
+      // Determine display name: use provided, or template displayName, or capitalize type
+      const displayName = options.displayName 
+        || template?.displayName 
+        || options.type.charAt(0).toUpperCase() + options.type.slice(1);
+
+      // Determine category: use provided, or template category, or 'custom'
+      const category = options.category 
+        || template?.category 
+        || 'custom';
 
       // Create component with defaults (user options override defaults)
       const component: Component = {
         id,
-        displayName: options.displayName,
+        displayName,
         type: options.type,
-        category: options.category || 'custom',
+        category,
         properties: options.properties || defaults.properties,
         styling: options.styling || defaults.styling,
         children: [],

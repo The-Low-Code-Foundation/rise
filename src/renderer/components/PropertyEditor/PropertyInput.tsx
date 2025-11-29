@@ -3,11 +3,13 @@
  * @description Smart property input that renders appropriate control based on property type
  * 
  * @architecture Phase 2, Task 2.3A - Property Panel Editor
+ * @updated 2025-11-29 - Task 3.5bis: Added template-based enum detection
  * @created 2025-11-26
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Standard form input patterns with type switching
+ * @confidence 9/10 - Standard form input patterns with type switching + template integration
  * 
  * @see .implementation/phase-2-component-management/task-2.3-property-panel-editor.md
+ * @see .implementation/phase-3-code-generation-and-preview/task-3.5bis-property-panel-enhancements.md
  * @see src/core/manifest/types.ts - ComponentProperty type
  * 
  * PROBLEM SOLVED:
@@ -15,12 +17,13 @@
  * - string → text input
  * - number → number input
  * - boolean → checkbox
- * - options → dropdown
+ * - options → dropdown (from PropProperty OR from template)
  * - object/array → read-only message (Level 1)
  * 
  * SOLUTION:
  * Single component that switches on dataType and renders the appropriate input.
  * Handles validation and change propagation to parent.
+ * Uses templateRegistry to detect enum options for StaticProperty.
  * 
  * LEVEL 1 RESTRICTIONS:
  * - Only StaticProperty values are editable
@@ -31,13 +34,15 @@
  * @performance-critical false
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { templateRegistry } from '../../../core/templates';
 import type { ComponentProperty, PropProperty } from '../../../core/manifest/types';
+import type { EnumOption } from '../../../core/templates/types';
 
 /**
  * Props for the PropertyInput component
  */
-interface PropertyInputProps {
+export interface PropertyInputProps {
   /** Property name (for onChange callback) */
   name: string;
   /** Property definition from manifest */
@@ -48,6 +53,8 @@ interface PropertyInputProps {
   onChange: (name: string, value: unknown) => void;
   /** Whether input is disabled */
   disabled?: boolean;
+  /** Component type for template lookup (Task 3.5bis) */
+  componentType?: string;
 }
 
 /**
@@ -65,6 +72,13 @@ interface InputProps {
  */
 interface SelectInputProps extends InputProps {
   options: string[];
+}
+
+/**
+ * Props for EnumSelectInput (includes EnumOption objects with labels)
+ */
+interface EnumSelectInputProps extends InputProps {
+  options: EnumOption[];
 }
 
 /**
@@ -96,12 +110,20 @@ export function PropertyInput({
   value,
   onChange,
   disabled = false,
+  componentType,
 }: PropertyInputProps): React.ReactElement {
   // Get dataType - default to string if not specified
   const dataType = property.dataType || 'string';
 
-  // Check for options (enum-style) - only available on PropProperty
-  const options = (property as PropProperty).options;
+  // Check for options (enum-style) - from PropProperty  
+  const propOptions = (property as PropProperty).options;
+
+  // Get template enum options if available (Task 3.5bis)
+  // This enables dropdown for StaticProperty when template defines options
+  const templateEnumOptions = useMemo(() => {
+    if (!componentType) return undefined;
+    return templateRegistry.getEnumOptions(componentType, name);
+  }, [componentType, name]);
 
   // Render based on dataType
   switch (dataType) {
@@ -132,13 +154,26 @@ export function PropertyInput({
 
     case 'string':
     default:
-      // Check if property has options (enum)
-      if (options && options.length > 0) {
+      // Check if property has options (enum) from PropProperty
+      if (propOptions && propOptions.length > 0) {
         return (
           <SelectInput
             name={name}
             value={value}
-            options={options}
+            options={propOptions}
+            onChange={onChange}
+            disabled={disabled}
+          />
+        );
+      }
+
+      // Check for template enum options (Task 3.5bis)
+      if (templateEnumOptions && templateEnumOptions.length > 0) {
+        return (
+          <EnumSelectInput
+            name={name}
+            value={value}
+            options={templateEnumOptions}
             onChange={onChange}
             disabled={disabled}
           />
@@ -229,7 +264,7 @@ function BooleanInput({ name, value, onChange, disabled }: InputProps): React.Re
 }
 
 /**
- * Select input for properties with predefined options
+ * Select input for properties with predefined options (string array)
  * 
  * @param props - SelectInput props including options array
  * @returns Select dropdown element
@@ -248,6 +283,35 @@ function SelectInput({ name, value, options, onChange, disabled }: SelectInputPr
       {options.map((opt) => (
         <option key={opt} value={opt}>
           {opt}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/**
+ * Enum select input for properties with EnumOption objects (Task 3.5bis)
+ * 
+ * Shows value as option value, label as display text.
+ * Used when template defines enum options with labels.
+ * 
+ * @param props - EnumSelectInput props including EnumOption array
+ * @returns Select dropdown element with labels
+ */
+function EnumSelectInput({ name, value, options, onChange, disabled }: EnumSelectInputProps): React.ReactElement {
+  return (
+    <select
+      value={(value as string) ?? ''}
+      onChange={(e) => onChange(name, e.target.value)}
+      disabled={disabled}
+      className="w-full px-3 py-2 text-sm border border-gray-300 rounded 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 disabled:bg-gray-100 disabled:cursor-not-allowed"
+    >
+      <option value="">Select...</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
         </option>
       ))}
     </select>

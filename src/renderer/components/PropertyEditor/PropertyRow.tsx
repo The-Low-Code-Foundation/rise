@@ -1,13 +1,15 @@
 /**
  * @file PropertyRow.tsx
- * @description Single property row with label, input, type badge, and remove button
+ * @description Single property row with label, input, type badge, description, and remove button
  * 
  * @architecture Phase 2, Task 2.3A - Property Panel Editor
+ * @updated 2025-11-29 - Task 3.5bis: Added template-based descriptions
  * @created 2025-11-26
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Standard row layout with action buttons
+ * @confidence 9/10 - Standard row layout with action buttons + template integration
  * 
  * @see .implementation/phase-2-component-management/task-2.3-property-panel-editor.md
+ * @see .implementation/phase-3-code-generation-and-preview/task-3.5bis-property-panel-enhancements.md
  * @see src/core/manifest/types.ts - ComponentProperty type
  * 
  * PROBLEM SOLVED:
@@ -17,10 +19,12 @@
  * - Remove button
  * - Appropriate input control
  * - Required indicator
+ * - (Task 3.5bis) Description from template
  * 
  * SOLUTION:
  * Reusable PropertyRow component that composes PropertyInput
  * and handles the surrounding layout and actions.
+ * Uses templateRegistry for descriptions and enum options.
  * 
  * LAYOUT:
  * ┌─────────────────────────────────────────────────────┐
@@ -28,6 +32,7 @@
  * │ ┌─────────────────────────────────────────────────┐ │
  * │ │ [input control based on type]                   │ │
  * │ └─────────────────────────────────────────────────┘ │
+ * │ ⓘ Description from template (Task 3.5bis)          │
  * │ Required (if applicable)                           │
  * └─────────────────────────────────────────────────────┘
  * 
@@ -35,9 +40,10 @@
  * @performance-critical false
  */
 
-import React from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useMemo } from 'react';
+import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { PropertyInput } from './PropertyInput';
+import { templateRegistry } from '../../../core/templates';
 import type { ComponentProperty, StaticProperty, PropProperty } from '../../../core/manifest/types';
 
 /**
@@ -52,6 +58,8 @@ interface PropertyRowProps {
   onChange: (name: string, value: unknown) => void;
   /** Callback when property should be removed */
   onRemove: (name: string) => void;
+  /** Component type for template lookup (Task 3.5bis) */
+  componentType?: string;
 }
 
 /**
@@ -112,6 +120,7 @@ export function PropertyRow({
   property,
   onChange,
   onRemove,
+  componentType,
 }: PropertyRowProps): React.ReactElement {
   // Get the value to display/edit
   const value = getPropertyValue(property);
@@ -121,6 +130,15 @@ export function PropertyRow({
   
   // Get display-friendly data type
   const dataType = property.dataType || 'string';
+
+  // Get template property info for description and options (Task 3.5bis)
+  const templateProp = useMemo(() => {
+    if (!componentType) return undefined;
+    return templateRegistry.getPropertyTemplate(componentType, name);
+  }, [componentType, name]);
+
+  // Get description from template if available
+  const description = templateProp?.description;
 
   return (
     <div className="p-3 bg-white border border-gray-200 rounded-lg">
@@ -163,21 +181,32 @@ export function PropertyRow({
         value={value}
         onChange={onChange}
         disabled={!editable}
+        componentType={componentType}
       />
 
-      {/* Footer: indicators */}
-      <div className="flex items-center gap-2 mt-2">
-        {/* Required indicator - only on PropProperty */}
-        {property.type === 'prop' && (property as PropProperty).required && (
-          <span className="text-xs text-red-500">Required</span>
+      {/* Footer: description and indicators */}
+      <div className="flex items-start gap-2 mt-2">
+        {/* Description from template (Task 3.5bis) */}
+        {description && (
+          <div className="flex items-start gap-1 flex-1">
+            <InformationCircleIcon className="w-3 h-3 text-gray-400 flex-shrink-0 mt-0.5" />
+            <span className="text-xs text-gray-500">{description}</span>
+          </div>
         )}
-        
-        {/* Non-editable indicator */}
-        {!editable && (
-          <span className="text-xs text-gray-400 italic">
-            Read-only (prop definition)
-          </span>
-        )}
+        {/* Right side indicators */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Required indicator - from template or PropProperty */}
+          {(templateProp?.required || (property.type === 'prop' && (property as PropProperty).required)) && (
+            <span className="text-xs text-red-500">Required</span>
+          )}
+          
+          {/* Non-editable indicator */}
+          {!editable && (
+            <span className="text-xs text-gray-400 italic">
+              Read-only (prop definition)
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

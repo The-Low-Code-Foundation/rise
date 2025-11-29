@@ -24,40 +24,46 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Modal } from '../Modal';
 
 /**
- * Component type options for quick selection
- */
-/**
- * Component type options for quick selection
- * IMPORTANT: All values must be valid HTML element names (lowercase)
- * or React component names (PascalCase)
+ * Component type options - simplified for MVP
+ * 
+ * 10 CORE ELEMENTS (matches componentTemplates.ts):
+ * - div: Container / layout wrapper
+ * - text: Universal text (renders as p, h1-h6, or span via 'as' prop)
+ * - button: Clickable button
+ * - input: Text input field
+ * - checkbox: Checkbox input with label
+ * - link: Anchor/link element
+ * - image: Image element
+ * - textarea: Multi-line text input
+ * - icon: Icon placeholder (Heroicons)
+ * - custom: Custom component
+ * 
+ * SPECIAL TYPES:
+ * - 'text' renders as p/h1-h6/span based on 'as' property
+ * - 'checkbox' is a Rise virtual type that renders as <input type="checkbox" />
+ * - 'icon' placeholder for Heroicons integration
  */
 const COMPONENT_TYPES = [
-  { value: 'div', label: 'Container (div)' },
-  { value: 'span', label: 'Text (span)' },
-  { value: 'p', label: 'Paragraph (p)' },
-  { value: 'h1', label: 'Heading 1 (h1)' },
-  { value: 'h2', label: 'Heading 2 (h2)' },
-  { value: 'h3', label: 'Heading 3 (h3)' },
-  { value: 'button', label: 'Button' },
-  { value: 'input', label: 'Input' },
-  { value: 'section', label: 'Section' },
-  { value: 'article', label: 'Article' },
-  { value: 'header', label: 'Header' },
-  { value: 'footer', label: 'Footer' },
-  { value: 'nav', label: 'Navigation' },
-  { value: 'ul', label: 'List (ul)' },
-  { value: 'li', label: 'List Item (li)' },
-  { value: 'a', label: 'Link (a)' },
-  { value: 'img', label: 'Image' },
-  { value: 'form', label: 'Form' },
-  { value: 'label', label: 'Label' },
-  { value: 'textarea', label: 'Text Area' },
-  { value: 'select', label: 'Select' },
-  { value: 'custom', label: 'Custom Component' },
+  // Layout
+  { value: 'div', label: 'Container', description: 'Layout wrapper for grouping elements', category: 'layout' },
+  
+  // Basic
+  { value: 'text', label: 'Text', description: 'Paragraph, heading, or span text', category: 'basic' },
+  { value: 'button', label: 'Button', description: 'Clickable button element', category: 'basic' },
+  { value: 'link', label: 'Link', description: 'Anchor link to navigate', category: 'basic' },
+  { value: 'image', label: 'Image', description: 'Image with src and alt', category: 'basic' },
+  { value: 'icon', label: 'Icon', description: 'Heroicon placeholder', category: 'basic' },
+  
+  // Form
+  { value: 'input', label: 'Text Input', description: 'Single-line text input', category: 'form' },
+  { value: 'textarea', label: 'Text Area', description: 'Multi-line text input', category: 'form' },
+  { value: 'checkbox', label: 'Checkbox', description: 'Checkbox with label', category: 'form' },
+  
+  // Custom
+  { value: 'custom', label: 'Custom', description: 'Custom component type', category: 'custom' },
 ];
 
 /**

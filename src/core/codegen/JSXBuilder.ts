@@ -50,9 +50,6 @@ import {
   isTextContentProp,
   isElementAttribute,
   isBooleanAttribute,
-  isStaticProperty,
-  isPropProperty,
-  getPropertyValue,
   getPropertyDataType,
   PROP_NAME_MAPPINGS,
 } from './types';
@@ -102,15 +99,17 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
   build(context: BuilderContext): JSXBuildResult {
     const { component, manifest, indentLevel } = context;
 
+    // Handle special types: 'checkbox' → input, 'text' → p/h1-h6/span based on 'as' prop
+    const actualElementType = this.getActualElementType(component.type, component);
+    
     // Determine if this is a self-closing element
     const selfClosing = isSelfClosingTag(component.type);
 
     // Build attribute string (className, other attributes)
-    const attributes = this.buildAttributes(component);
+    const attributes = this.buildAttributes(component, actualElementType);
 
-    // Get indent strings
+    // Get indent string for multi-line content
     const baseIndent = this.getIndentString(indentLevel);
-    const childIndent = this.getIndentString(indentLevel + 1);
 
     // Track child components for result
     const childComponents: string[] = [];
@@ -120,20 +119,23 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
 
     if (selfClosing) {
       // Self-closing element: <input className="..." />
-      code = `<${component.type}${attributes} />`;
+      code = `<${actualElementType}${attributes} />`;
+      
+      // Check if this input/checkbox has a label that should wrap it
+      code = this.wrapWithLabel(component, code, actualElementType);
     } else {
       // Regular element with potential children
       const children = this.buildChildren(component, manifest, indentLevel + 1, childComponents);
 
       if (children.trim() === '') {
         // Empty element: <div className="..."></div>
-        code = `<${component.type}${attributes}></${component.type}>`;
+        code = `<${actualElementType}${attributes}></${actualElementType}>`;
       } else if (this.isSimpleContent(children)) {
         // Simple content (single expression): <span>{label}</span>
-        code = `<${component.type}${attributes}>${children}</${component.type}>`;
+        code = `<${actualElementType}${attributes}>${children}</${actualElementType}>`;
       } else {
         // Complex content with line breaks: <div>\n  children\n</div>
-        code = `<${component.type}${attributes}>\n${children}\n${baseIndent}</${component.type}>`;
+        code = `<${actualElementType}${attributes}>\n${children}\n${baseIndent}</${actualElementType}>`;
       }
     }
 
@@ -145,13 +147,71 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
   }
 
   /**
+   * Get the actual HTML element type for a component type
+   * 
+   * Handles Rise virtual types that map to different HTML elements:
+   * - 'checkbox' → 'input' (with type="checkbox" attribute)
+   * - 'text' → dynamic based on 'as' prop (p, h1-h6, span) - defaults to 'p'
+   * - 'icon' → handled specially (see buildIcon method)
+   * 
+   * @param componentType - The component type from manifest
+   * @param component - The component definition (optional, for 'text' type resolution)
+   * @returns Actual HTML element type to render
+   */
+  private getActualElementType(componentType: string, component?: Component): string {
+    // Map Rise virtual types to actual HTML elements
+    const typeMapping: Record<string, string> = {
+      'checkbox': 'input',
+      'icon': 'span', // Icon renders as span wrapper (actual icon import handled separately)
+    };
+    
+    // Special handling for 'text' type - uses 'as' property
+    if (componentType === 'text' && component) {
+      const asProperty = component.properties?.as;
+      if (asProperty && asProperty.type === 'static' && typeof asProperty.value === 'string') {
+        // Valid values: p, h1, h2, h3, h4, h5, h6, span
+        const validTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span'];
+        if (validTags.includes(asProperty.value)) {
+          return asProperty.value;
+        }
+      }
+      // Default to 'p' for text
+      return 'p';
+    }
+    
+    return typeMapping[componentType] || componentType;
+  }
+
+  /**
+   * Wrap a form input with a label element when label prop exists
+   * 
+   * NOTE: For Level 1 MVP, we keep it simple - just return the input without wrapper.
+   * The label is handled as a prop in the component.
+   * Label wrapper JSX is complex and can cause indentation/formatting issues.
+   * 
+   * TODO: Level 2 will add proper label wrapping with correct indentation handling.
+   * 
+   * @param _component - The component definition (unused in Level 1)
+   * @param inputCode - The generated input element code
+   * @param _elementType - The actual HTML element type (unused in Level 1)
+   * @returns The input code (label wrapper deferred to Level 2)
+   */
+  private wrapWithLabel(_component: Component, inputCode: string, _elementType: string): string {
+    // For Level 1 MVP, just return the input without wrapper
+    // Labels are included in the component's props but not rendered as wrapper elements
+    // This keeps the generated code simple and avoids formatting issues
+    return inputCode;
+  }
+
+  /**
    * Build the attributes string for an element
-   * Includes className and other applicable props
+   * Includes className, style, and other applicable props
    *
    * @param component - The component definition
-   * @returns Attribute string like ' className="btn" disabled={disabled}'
+   * @param _actualElementType - The actual HTML element type (after mapping virtual types) - reserved for future use
+   * @returns Attribute string like ' className="btn" style={{...}} disabled={disabled}'
    */
-  private buildAttributes(component: Component): string {
+  private buildAttributes(component: Component, _actualElementType: string): string {
     const attrs: string[] = [];
 
     // 1. Add className from styling.baseClasses
@@ -160,7 +220,18 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
       attrs.push(`className="${className}"`);
     }
 
-    // 2. Add props that should be element attributes
+    // 2. Add style attribute from styling.inlineStyles
+    const styleAttr = this.buildStyleAttribute(component);
+    if (styleAttr) {
+      attrs.push(styleAttr);
+    }
+
+    // 3. For checkbox type, add type="checkbox" attribute
+    if (component.type === 'checkbox') {
+      attrs.push('type="checkbox"');
+    }
+
+    // 4. Add props that should be element attributes
     // For Level 1, we only add props that are standard HTML attributes
     const propAttrs = this.buildPropAttributes(component);
     attrs.push(...propAttrs);
@@ -171,6 +242,42 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
     }
 
     return ' ' + attrs.join(' ');
+  }
+
+  /**
+   * Build style attribute from inline styles
+   * Converts camelCase CSS properties to React style object
+   *
+   * @param component - The component definition
+   * @returns Style attribute string like 'style={{ padding: "8px 16px", backgroundColor: "#3b82f6" }}'
+   *          or empty string if no inline styles
+   */
+  private buildStyleAttribute(component: Component): string {
+    const inlineStyles = component.styling?.inlineStyles;
+
+    // Return empty if no inline styles
+    if (!inlineStyles || Object.keys(inlineStyles).length === 0) {
+      return '';
+    }
+
+    // Build style object entries
+    const styleEntries: string[] = [];
+
+    for (const [prop, value] of Object.entries(inlineStyles)) {
+      // Skip empty values
+      if (!value && value !== '0') continue;
+
+      // Quote string values, but numbers don't need quotes in JSX
+      // All our values are strings (from template defaults)
+      styleEntries.push(`${prop}: "${value}"`);
+    }
+
+    if (styleEntries.length === 0) {
+      return '';
+    }
+
+    // Return as React style object: style={{ prop: "value", ... }}
+    return `style={{ ${styleEntries.join(', ')} }}`;
   }
 
   /**
@@ -206,7 +313,7 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
     const attrs: string[] = [];
     const properties = component.properties || {};
 
-    for (const [propName, propDef] of Object.entries(properties)) {
+    for (const [propName] of Object.entries(properties)) {
       // Skip text content props (they go inside the element)
       if (isTextContentProp(propName) && !isElementAttribute(propName)) {
         continue;

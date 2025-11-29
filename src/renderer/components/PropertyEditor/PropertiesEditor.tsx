@@ -223,6 +223,7 @@ export function PropertiesEditor({ component }: PropertiesEditorProps): React.Re
               property={property}
               onChange={handlePropertyChange}
               onRemove={handlePropertyRemove}
+              componentType={freshComponent.type}
             />
           ))}
         </div>
@@ -247,6 +248,7 @@ export function PropertiesEditor({ component }: PropertiesEditorProps): React.Re
         onClose={() => setShowAddDialog(false)}
         onAdd={handleAddProperty}
         existingPropertyNames={Object.keys(component.properties)}
+        componentType={component.type}
       />
     </section>
   );

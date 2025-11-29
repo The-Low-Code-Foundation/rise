@@ -112,13 +112,17 @@ export type ComponentProperty = StaticProperty | PropProperty;
 
 /**
  * Component styling configuration
+ * 
+ * Hybrid approach: Use Tailwind classes for interactive states (hover, focus, etc.)
+ * and inline styles for arbitrary values (specific px values, colors, etc.)
  */
 export interface ComponentStyling {
-  baseClasses: string[]; // Always-applied Tailwind classes
+  baseClasses: string[]; // Tailwind classes (interactive states, utilities)
+  inlineStyles?: Record<string, string>; // CSS properties as key-value pairs (e.g., { padding: '8px 16px' })
   conditionalClasses?: {
     container?: string[]; // Conditional class expressions (simple ternaries only)
   };
-  customCSS?: string; // Inline CSS (sanitized)
+  customCSS?: string; // Legacy: raw CSS string (prefer inlineStyles)
 }
 
 /**
@@ -140,7 +144,7 @@ export interface Component {
   id: string; // Unique component ID (e.g., "comp_button_001")
   displayName: string; // Human-readable name
   type: string; // HTML element or component type (e.g., "button", "div", "UserCard")
-  category?: 'basic' | 'layout' | 'form' | 'custom'; // Component category
+  category?: 'basic' | 'layout' | 'form' | 'display' | 'custom'; // Component category
   
   properties: Record<string, ComponentProperty>; // Component properties
   

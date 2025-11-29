@@ -396,6 +396,8 @@ export interface CodeParts {
  * These elements cannot have children and should render as <tag />
  *
  * Reference: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+ * 
+ * NOTE: 'checkbox' is a Rise virtual type that renders as <input type="checkbox" />
  */
 export const SELF_CLOSING_TAGS = new Set([
   'area',
@@ -406,6 +408,7 @@ export const SELF_CLOSING_TAGS = new Set([
   'hr',
   'img',
   'input',
+  'checkbox', // Rise virtual type - renders as <input type="checkbox" />
   'link',
   'meta',
   'param', // Deprecated but still void
@@ -428,10 +431,15 @@ export const RESERVED_PROP_NAMES = new Set([
 
 /**
  * Props that map to different JSX attributes
+ * 
+ * NOTE: 'checked' maps to 'defaultChecked' because Level 1 doesn't support
+ * event handlers. Using 'checked' without 'onChange' causes React warnings.
+ * 'defaultChecked' works for uncontrolled inputs.
  */
 export const PROP_NAME_MAPPINGS: Record<string, string> = {
   class: 'className',
   for: 'htmlFor',
+  checked: 'defaultChecked',
 };
 
 /**
