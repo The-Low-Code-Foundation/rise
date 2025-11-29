@@ -97,30 +97,6 @@ function StylePropertyRow({
   onChange,
   onRemove,
 }: StylePropertyRowProps): React.ReactElement {
-  // Determine if we should show a dropdown or text input
-  // Show dropdown if property has options (enum) or presets
-  const hasDropdown = propertyDef && 
-    ((propertyDef.type === 'enum' && propertyDef.options) || 
-     (propertyDef.presets && propertyDef.presets.length > 0));
-
-  // Get dropdown options
-  const dropdownOptions = useMemo(() => {
-    if (!propertyDef) return [];
-    
-    if (propertyDef.type === 'enum' && propertyDef.options) {
-      return propertyDef.options;
-    }
-    
-    if (propertyDef.presets) {
-      return propertyDef.presets;
-    }
-    
-    return [];
-  }, [propertyDef]);
-
-  // Check if current value is in dropdown options
-  const isCustomValue = hasDropdown && value && !dropdownOptions.includes(value);
-
   return (
     <div className="flex items-center gap-2 py-1">
       {/* Property name label */}
@@ -131,46 +107,16 @@ function StylePropertyRow({
         {name}
       </label>
 
-      {/* Input/Select */}
+      {/* Simple text input */}
       <div className="flex-1 min-w-0">
-        {hasDropdown ? (
-          <div className="relative">
-            {/* Combo box: dropdown with editable text */}
-            <input
-              type="text"
-              value={value || ''}
-              onChange={(e) => onChange(name, e.target.value)}
-              placeholder={propertyDef?.default || 'auto'}
-              list={`style-${name}-options`}
-              className="w-full px-2 py-1 text-xs font-mono border border-gray-300 rounded 
-                         focus:outline-none focus:ring-1 focus:ring-blue-500 pr-6"
-            />
-            {/* Datalist for suggestions */}
-            <datalist id={`style-${name}-options`}>
-              {dropdownOptions.map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-            {/* Custom value indicator */}
-            {isCustomValue && (
-              <span 
-                className="absolute right-8 top-1/2 -translate-y-1/2 text-xs text-amber-500"
-                title="Custom value"
-              >
-                *
-              </span>
-            )}
-          </div>
-        ) : (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(name, e.target.value)}
-            placeholder={propertyDef?.default || ''}
-            className="w-full px-2 py-1 text-xs font-mono border border-gray-300 rounded 
-                       focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        )}
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(name, e.target.value)}
+          placeholder={propertyDef?.default || ''}
+          className="w-full px-2 py-1 text-xs font-mono border border-gray-300 rounded 
+                     focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
       </div>
 
       {/* Remove button */}

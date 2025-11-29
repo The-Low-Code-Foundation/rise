@@ -187,3 +187,94 @@ export interface UsageStats {
   /** Percentage of budget used (0-100) */
   percentUsed: number;
 }
+
+// ===========================================================================
+// ENHANCED AI GENERATION TYPES (Task 3.7)
+// ===========================================================================
+
+/**
+ * Raw AI-generated component structure
+ * 
+ * This represents the nested structure that AI returns,
+ * where children are inline objects (not IDs).
+ * This gets flattened into proper Component objects with ID references.
+ * 
+ * USAGE:
+ * ```typescript
+ * const raw: RawAIComponent = JSON.parse(aiResponse);
+ * const { root, components } = flattenNestedComponents(raw);
+ * ```
+ */
+export interface RawAIComponent {
+  /** Display name for the component */
+  displayName: string;
+  
+  /** HTML element or component type */
+  type: string;
+  
+  /** Component category */
+  category?: 'basic' | 'layout' | 'form' | 'display' | 'custom';
+  
+  /** Properties with values */
+  properties: Record<string, RawAIProperty>;
+  
+  /** Styling configuration */
+  styling: {
+    baseClasses: string[];
+    inlineStyles?: Record<string, string>;
+  };
+  
+  /** Nested child components (inline, not IDs) */
+  children: RawAIComponent[];
+}
+
+/**
+ * Raw property from AI response
+ * Can be static or prop type
+ */
+export interface RawAIProperty {
+  type: 'static' | 'prop';
+  dataType: 'string' | 'number' | 'boolean';
+  value?: string | number | boolean;
+  default?: string | number | boolean;
+  required?: boolean;
+}
+
+/**
+ * Result of flattening nested components
+ * 
+ * The AI returns nested objects, but the manifest stores
+ * components flat with ID references. This is the result
+ * of the flattening process.
+ */
+export interface FlattenedComponents {
+  /** The root component (top-level from AI response) */
+  rootComponent: Component;
+  
+  /** All components including root and descendants, keyed by ID */
+  allComponents: Record<string, Component>;
+}
+
+/**
+ * Quality score for AI response evaluation
+ * Used to determine if response should be accepted or retried
+ */
+export interface ResponseQualityScore {
+  /** Overall score (0-100) */
+  overall: number;
+  
+  /** Has sufficient depth (children exist where expected) */
+  hasDepth: boolean;
+  
+  /** Styling is comprehensive (5+ classes on most components) */
+  hasStyling: boolean;
+  
+  /** Content is realistic (not placeholder123) */
+  hasRealisticContent: boolean;
+  
+  /** Level 1 compliant (no events, state, expressions) */
+  isLevel1Compliant: boolean;
+  
+  /** Issues found during scoring */
+  issues: string[];
+}

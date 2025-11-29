@@ -3,25 +3,28 @@
  * @description Editor for component Tailwind CSS classes and inline styles
  * 
  * @architecture Phase 2, Task 2.3B - Property Panel Editor
- * @updated 2025-11-29 - Task 3.5bis: Added InlineStylesEditor and Tailwind autocomplete
+ * @updated 2025-11-29 - Task 3.6: Added Visual Style Editor toggle
  * @created 2025-11-26
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Tag-style class editor with add/remove + inline styles
+ * @confidence 9/10 - Tag-style class editor with add/remove + inline styles + visual editor
  * 
  * @see .implementation/phase-2-component-management/task-2.3-property-panel-editor.md
  * @see .implementation/phase-3-code-generation-and-preview/task-3.5bis-property-panel-enhancements.md
+ * @see .implementation/phase-3-code-generation-and-preview/task-3.6-visual-style-controls.md
  * @see src/renderer/store/manifestStore.ts - updateComponent action
  * 
  * PROBLEM SOLVED:
  * Users need to edit styling on components:
- * - View existing Tailwind classes as tags
- * - Add new classes with autocomplete suggestions
- * - Remove existing classes
+ * - View existing Tailwind classes as tags (Text mode)
+ * - Add new classes with autocomplete suggestions (Text mode)
+ * - Visual controls for common styles (Visual mode - Task 3.6)
  * - See and edit inline CSS styles (Task 3.5bis)
  * - See custom CSS (read-only in Level 1)
  * 
  * SOLUTION:
- * - Tag-based UI shows classes as removable pills
+ * - Toggle between "Visual" and "Text" editing modes
+ * - Visual mode: VisualStyleEditor with collapsible sections
+ * - Text mode: Tag-based UI shows classes as removable pills
  * - Autocomplete dropdown for Tailwind class suggestions
  * - InlineStylesEditor shows/edits CSS properties
  * - Updates manifestStore.updateComponent() on changes
@@ -53,11 +56,17 @@
  */
 
 import React, { useCallback, useState, useMemo, useRef, useEffect } from 'react';
-import { PaintBrushIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PaintBrushIcon, XMarkIcon, PlusIcon, EyeIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
 import { useManifestStore } from '../../store/manifestStore';
 import { InlineStylesEditor } from './InlineStylesEditor';
+import { VisualStyleEditor } from '../StyleEditor';
 import { TAILWIND_CLASS_SUGGESTIONS } from '../../../core/templates/componentTemplates';
 import type { Component, ComponentStyling } from '../../../core/manifest/types';
+
+/**
+ * Editing mode for styling: visual controls vs text-based
+ */
+type StylingMode = 'visual' | 'text';
 
 /**
  * Flatten all Tailwind suggestions into a single searchable array
@@ -102,6 +111,9 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
   const freshComponent = useManifestStore((s) => 
     s.manifest?.components[component.id]
   ) || component;
+
+  // Mode toggle: visual vs text-based editing
+  const [mode, setMode] = useState<StylingMode>('visual');
 
   // Local state for new class input
   const [newClass, setNewClass] = useState('');
@@ -297,22 +309,91 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
     }
   }, [selectedIndex, showAutocomplete]);
 
+  /**
+   * Get current className string from base classes
+   * Used for VisualStyleEditor integration
+   */
+  const currentClassName = useMemo(() => {
+    return baseClasses.join(' ');
+  }, [baseClasses]);
+
+  /**
+   * Handle className change from VisualStyleEditor
+   * Parses the string back into baseClasses array
+   */
+  const handleClassNameChange = useCallback((newClassName: string) => {
+    const newClasses = newClassName.split(/\s+/).filter(Boolean);
+    
+    const updatedStyling: ComponentStyling = {
+      ...freshComponent.styling,
+      baseClasses: newClasses,
+    };
+    
+    updateComponent(freshComponent.id, { styling: updatedStyling });
+  }, [freshComponent, updateComponent]);
+
   return (
     <section>
-      {/* Section header */}
-      <div className="flex items-center gap-2 mb-3">
-        <PaintBrushIcon className="w-4 h-4 text-gray-500" />
-        <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
-          Styling
-        </h3>
+      {/* Section header with mode toggle */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <PaintBrushIcon className="w-4 h-4 text-gray-500" />
+          <h3 className="text-xs font-medium text-gray-700 uppercase tracking-wider">
+            Styling
+          </h3>
+        </div>
+        
+        {/* Mode toggle buttons */}
+        <div className="flex rounded border border-gray-300 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMode('visual')}
+            className={`flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-colors
+                       ${mode === 'visual' 
+                         ? 'bg-blue-500 text-white' 
+                         : 'bg-white text-gray-600 hover:bg-gray-50'}
+                       border-r border-gray-300`}
+            title="Visual editing mode"
+          >
+            <EyeIcon className="w-3 h-3" />
+            Visual
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('text')}
+            className={`flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-colors
+                       ${mode === 'text' 
+                         ? 'bg-blue-500 text-white' 
+                         : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            title="Text editing mode"
+          >
+            <CodeBracketIcon className="w-3 h-3" />
+            Text
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {/* Tailwind Classes section */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Tailwind Classes
-          </label>
+      {/* Visual Mode: Use VisualStyleEditor */}
+      {mode === 'visual' && (
+        <div className="space-y-3">
+          <VisualStyleEditor
+            className={currentClassName}
+            onChange={handleClassNameChange}
+          />
+          
+          {/* Inline Styles Editor (also in visual mode) */}
+          <InlineStylesEditor component={component} />
+        </div>
+      )}
+
+      {/* Text Mode: Original tag-based interface */}
+      {mode === 'text' && (
+        <div className="space-y-3">
+          {/* Tailwind Classes section */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-2">
+              Tailwind Classes
+            </label>
 
           {/* Class tags */}
           {baseClasses.length > 0 && (
@@ -442,7 +523,8 @@ export function StylingEditor({ component }: StylingEditorProps): React.ReactEle
             No styling defined. Add Tailwind classes or inline styles above.
           </p>
         )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

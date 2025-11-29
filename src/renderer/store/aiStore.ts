@@ -94,6 +94,7 @@ interface AIState {
   deleteKey: () => Promise<boolean>;
   estimateCost: (prompt: string) => Promise<CostEstimate | null>;
   generate: (prompt: string, context: GenerationContext) => Promise<GeneratedComponent | null>;
+  generateEnhanced: (prompt: string, context: GenerationContext) => Promise<{ root: GeneratedComponent; allComponents: Record<string, GeneratedComponent> } | null>;
   refreshUsageStats: () => Promise<void>;
   updateBudgetConfig: (config: Partial<BudgetConfig>) => Promise<void>;
   clearLastError: () => void;
@@ -317,6 +318,59 @@ export const useAIStore = create<AIState>((set, get) => ({
         await get().refreshUsageStats();
         
         return result.result.component;
+      }
+      
+      // Generation failed
+      const errorMessage = result.result?.error || result.error || 'Generation failed';
+      set({
+        isGenerating: false,
+        lastError: errorMessage,
+      });
+      
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      set({
+        isGenerating: false,
+        lastError: message,
+      });
+      return null;
+    }
+  },
+
+  /**
+   * Generate a component hierarchy from natural language prompt (Enhanced).
+   * Uses the enhanced AI endpoint that produces nested components.
+   * 
+   * @param prompt - User's description
+   * @param context - Generation context
+   * @returns Generated root component and all flattened components, or null on error
+   */
+  generateEnhanced: async (prompt: string, context: GenerationContext) => {
+    set({ 
+      isGenerating: true, 
+      lastError: null,
+      lastGenerated: null,
+    });
+    
+    try {
+      const result = await electronAPI.ai.generateEnhanced(prompt, context);
+      
+      if (result.success && result.result?.success && result.result.component && result.result.allComponents) {
+        // Success - store the root component 
+        set({
+          isGenerating: false,
+          lastGenerated: result.result.component,
+          lastUsage: result.result.usage || null,
+        });
+        
+        // Refresh usage stats
+        await get().refreshUsageStats();
+        
+        return {
+          root: result.result.component,
+          allComponents: result.result.allComponents,
+        };
       }
       
       // Generation failed

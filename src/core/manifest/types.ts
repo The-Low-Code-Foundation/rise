@@ -268,6 +268,7 @@ export interface ManifestState {
   getComponentTree: () => ComponentTreeNode[];
   getComponentDepth: (id: string) => number;
   canAddChild: (parentId: string) => boolean; // Check if can add child (max depth)
+  addComponentsFromAI: (components: Record<string, any>, rootId: string, parentId?: string) => void; // Task 3.7: Add AI-generated component hierarchy
 }
 
 /**

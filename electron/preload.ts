@@ -132,6 +132,9 @@ export interface AIAPI {
   /** Generate a component from natural language */
   generate: (prompt: string, context: GenerationContext) => Promise<{ success: boolean; result?: GenerationResult; error?: string }>;
   
+  /** Generate a component with full hierarchy (Task 3.7 Enhanced) */
+  generateEnhanced: (prompt: string, context: GenerationContext) => Promise<{ success: boolean; result?: EnhancedGenerationResult; error?: string }>;
+  
   /** Get current usage statistics */
   getUsageStats: () => Promise<{ success: boolean; stats?: UsageStats; error?: string }>;
   
@@ -162,6 +165,15 @@ interface GenerationResult {
     completionTokens: number;
     cost: number;
   };
+}
+
+/**
+ * Enhanced generation result (Task 3.7)
+ * Includes flattened component hierarchy
+ */
+interface EnhancedGenerationResult extends GenerationResult {
+  /** All components including root and descendants, keyed by ID */
+  allComponents?: Record<string, any>;
 }
 
 interface CostEstimate {
@@ -492,6 +504,10 @@ const electronAPI: ElectronAPI = {
     // Generate component from prompt
     generate: (prompt: string, context: GenerationContext) => 
       ipcRenderer.invoke('ai:generate', prompt, context),
+
+    // Generate component with full hierarchy (Task 3.7 Enhanced)
+    generateEnhanced: (prompt: string, context: GenerationContext) => 
+      ipcRenderer.invoke('ai:generate-enhanced', prompt, context),
     
     // Get usage statistics
     getUsageStats: () => ipcRenderer.invoke('ai:get-usage-stats'),

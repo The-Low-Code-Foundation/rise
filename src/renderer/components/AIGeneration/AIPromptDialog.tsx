@@ -69,13 +69,13 @@ export function AIPromptDialog({
   const [isEstimating, setIsEstimating] = useState(false);
   
   // Store state
-  const { manifest, addComponent } = useManifestStore();
+  const { manifest, addComponentsFromAI } = useManifestStore();
   const { 
     hasApiKey, 
     isGenerating, 
     lastError,
     estimateCost,
-    generate,
+    generateEnhanced,
     checkApiKey,
     clearLastError,
   } = useAIStore();
@@ -109,6 +109,9 @@ export function AIPromptDialog({
   
   /**
    * Handle generate button click
+   * 
+   * Uses enhanced AI generation (Task 3.7) which produces complete
+   * component hierarchies including children.
    */
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || !manifest) return;
@@ -125,20 +128,17 @@ export function AIPromptDialog({
         .map(c => c.displayName),
     };
     
-    // Call generate
-    const component = await generate(prompt, context);
+    // Call enhanced generate which returns root + all flattened components
+    const result = await generateEnhanced(prompt, context);
     
-    if (component) {
-      // Add to manifest with parent relationship
-      // Transform AI result into CreateComponentOptions format
-      addComponent({
-        displayName: component.displayName,
-        type: component.type,
-        category: (component.category as 'basic' | 'layout' | 'form' | 'custom') || 'custom',
-        properties: component.properties,
-        styling: component.styling,
-        parentId: parentComponentId,
-      });
+    if (result) {
+      // Add ALL generated components to manifest at once
+      // The root's ID is used to optionally link to parent
+      addComponentsFromAI(
+        result.allComponents,
+        result.root.id,
+        parentComponentId
+      );
       
       // Close dialog on success
       onClose();
@@ -146,7 +146,7 @@ export function AIPromptDialog({
       setCostEstimate(null);
     }
     // If failed, lastError will be set in store
-  }, [prompt, manifest, parentComponentId, generate, addComponent, onClose]);
+  }, [prompt, manifest, parentComponentId, generateEnhanced, addComponentsFromAI, onClose]);
   
   /**
    * Handle dialog close

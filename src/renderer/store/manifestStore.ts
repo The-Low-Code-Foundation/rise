@@ -1047,6 +1047,62 @@ export const useManifestStore = create<ManifestState>()(
       const depth = state.getComponentDepth(parentId);
       return depth < MAX_DEPTH;
     },
+
+    /**
+     * Add multiple AI-generated components at once (Task 3.7)
+     * 
+     * Used for enhanced AI generation which produces component hierarchies.
+     * Components are already linked via their children arrays.
+     * 
+     * @param components - Map of component ID to component data
+     * @param rootId - The root component ID to add as top-level
+     * @param parentId - Optional parent for the root component
+     */
+    addComponentsFromAI: (
+      components: Record<string, any>,
+      rootId: string,
+      parentId?: string
+    ) => {
+      const state = get();
+      
+      // Auto-create empty manifest if none exists
+      if (!state.manifest) {
+        set({ manifest: createEmptyManifest() });
+      }
+
+      set((state) => {
+        // Add all components to manifest
+        for (const [id, comp] of Object.entries(components)) {
+          // Ensure component has required structure
+          const component: Component = {
+            id: comp.id || id,
+            displayName: comp.displayName || 'Component',
+            type: comp.type || 'container',
+            category: comp.category || 'custom',
+            properties: comp.properties || {},
+            styling: comp.styling || { baseClasses: [] },
+            children: comp.children || [],
+            metadata: comp.metadata || createComponentMetadata('ai'),
+          };
+          
+          state.manifest!.components[id] = component;
+        }
+        
+        // If parentId specified, add root to parent's children
+        if (parentId) {
+          const parent = state.manifest!.components[parentId];
+          if (parent && !parent.children.includes(rootId)) {
+            parent.children.push(rootId);
+          }
+        }
+        
+        // Update timestamp
+        state.manifest!.metadata.updatedAt = new Date().toISOString();
+      });
+
+      // Auto-save
+      get().saveManifest().catch(console.error);
+    },
   }))
 );
 

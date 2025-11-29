@@ -54,6 +54,7 @@ export const AIChannels = {
   // Generation
   ESTIMATE_COST: 'ai:estimate-cost',
   GENERATE: 'ai:generate',
+  GENERATE_ENHANCED: 'ai:generate-enhanced', // Task 3.7: Enhanced generation with hierarchies
   
   // Usage & Budget
   GET_USAGE_STATS: 'ai:get-usage-stats',
@@ -348,6 +349,58 @@ export function registerAIHandlers(): void {
       }
     }
   );
+
+  /**
+   * Generate a component with full hierarchy from natural language prompt (Task 3.7)
+   * 
+   * This is the enhanced version that produces complete component hierarchies
+   * with children, comprehensive styling, and realistic content.
+   * 
+   * @param prompt - User's description
+   * @param context - Generation context
+   * @returns Promise with { success, result: GenerationResult & { allComponents } }
+   */
+  ipcMain.handle(
+    AIChannels.GENERATE_ENHANCED,
+    async (_event, prompt: string, context: GenerationContext) => {
+      console.log('[AI-IPC] Generate Enhanced requested');
+      
+      try {
+        if (!generator) {
+          return {
+            success: false,
+            error: 'AI generator not initialized. Open a project first.',
+          };
+        }
+        
+        const result = await generator.generateEnhanced(prompt, context);
+        
+        if (result.success) {
+          const componentCount = result.allComponents ? Object.keys(result.allComponents).length : 0;
+          console.log(
+            '[AI-IPC] Generated enhanced component:',
+            result.component?.displayName,
+            `(${componentCount} total components)`
+          );
+        } else {
+          console.log('[AI-IPC] Enhanced generation failed:', result.error);
+        }
+        
+        return {
+          success: true,
+          result,
+        };
+        
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[AI-IPC] Generate Enhanced failed:', message);
+        return {
+          success: false,
+          error: message,
+        };
+      }
+    }
+  );
   
   /**
    * Get current usage statistics
@@ -466,6 +519,7 @@ export function cleanupAIHandlers(): void {
   ipcMain.removeHandler(AIChannels.DELETE_KEY);
   ipcMain.removeHandler(AIChannels.ESTIMATE_COST);
   ipcMain.removeHandler(AIChannels.GENERATE);
+  ipcMain.removeHandler(AIChannels.GENERATE_ENHANCED);
   ipcMain.removeHandler(AIChannels.GET_USAGE_STATS);
   ipcMain.removeHandler(AIChannels.GET_BUDGET_CONFIG);
   ipcMain.removeHandler(AIChannels.UPDATE_BUDGET_CONFIG);
