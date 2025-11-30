@@ -2,6 +2,17 @@
  * @file PreviewPanel.tsx
  * @description Main preview panel container component
  * 
+ * REFACTORED: Changed from flexbox to CSS Grid for reliable height handling.
+ * 
+ * LAYOUT STRUCTURE (when running):
+ * ┌────────────────────────────────────────┐
+ * │ PreviewToolbar (auto height)           │ ← grid-rows: auto
+ * ├────────────────────────────────────────┤
+ * │                                        │
+ * │ Preview Content (fills remaining)      │ ← grid-rows: 1fr
+ * │                                        │
+ * └────────────────────────────────────────┘
+ * 
  * Orchestrates the preview experience by combining:
  * - PreviewToolbar for controls
  * - PreviewFrame for the actual preview
@@ -9,8 +20,9 @@
  * 
  * @architecture Phase 1, Task 1.4B - Preview Panel UI
  * @created 2025-11-25
+ * @updated 2025-11-30 - Refactored to CSS Grid for height fix (Task 3.8)
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Composition pattern with state management
+ * @confidence 9/10 - CSS Grid layout for reliable height handling
  * 
  * @see .implementation/phase-1-application-shell/task-1.4-preview-renderer.md
  * 
@@ -168,12 +180,16 @@ export function PreviewPanel() {
       }
       
       return (
-        <div className="flex flex-col h-full">
-          {/* Toolbar with viewport/zoom controls */}
+        // CRITICAL: Use CSS Grid for toolbar + content layout
+        // grid-rows-[auto_1fr] = toolbar auto-sized, content fills rest
+        <div className="h-full w-full grid grid-rows-[auto_1fr] overflow-hidden">
+          {/* Toolbar - auto height (first grid row) */}
           <PreviewToolbar />
           
-          {/* Preview frame - use min-h-0 to allow flex child to shrink and scroll */}
-          <div className="flex-1 min-h-0">
+          {/* Preview content - fills remaining space (second grid row) */}
+          {/* h-full w-full ensures the content area fills the grid cell */}
+          {/* relative positioning allows absolute children like loading overlays */}
+          <div className="h-full w-full overflow-hidden relative">
             <PreviewFrame
               url={previewUrl}
               viewportWidth={viewportWidth}

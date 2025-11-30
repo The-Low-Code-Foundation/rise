@@ -2,10 +2,22 @@
  * @file LogicCanvas.tsx
  * @description React Flow canvas for visual logic editing
  * 
+ * REFACTORED: Changed from flexbox to CSS Grid for reliable height handling.
+ * 
+ * LAYOUT STRUCTURE:
+ * ┌────────────────────────────────────────┐
+ * │ FlowToolbar (auto height)              │ ← grid-rows: auto
+ * ├────────────────────────────────────────┤
+ * │                                        │
+ * │ React Flow Canvas (fills remaining)    │ ← grid-rows: 1fr
+ * │                                        │
+ * └────────────────────────────────────────┘
+ * 
  * @architecture Phase 4, Task 4.1 - React Flow Integration
  * @created 2025-11-29
+ * @updated 2025-11-30 - Refactored to CSS Grid for height fix (Task 3.8)
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - React Flow integration with custom node support
+ * @confidence 9/10 - CSS Grid layout with React Flow integration
  * 
  * @see src/renderer/store/logicStore.ts - State management
  * @see src/core/logic/types.ts - Type definitions
@@ -15,8 +27,10 @@
  * - Provides visual canvas for creating logic flows
  * - Handles node/edge creation, editing, and deletion
  * - Syncs canvas state with logicStore
+ * - FIXED: Proper height propagation with CSS Grid
  * 
  * SOLUTION:
+ * - CSS Grid with grid-rows-[auto_1fr] for toolbar + canvas
  * - React Flow with custom node types
  * - Background grid with snap-to-grid
  * - Controls for zoom/pan
@@ -338,6 +352,10 @@ interface LogicCanvasProps {
  * Renders a React Flow canvas with custom nodes for Rise's logic system.
  * Handles node/edge state, connections, and user interactions.
  * 
+ * Uses CSS Grid with grid-rows-[auto_1fr] for reliable height handling:
+ * - Row 1 (auto): FlowToolbar takes its natural height
+ * - Row 2 (1fr): React Flow canvas fills all remaining space
+ * 
  * USAGE:
  * ```tsx
  * <LogicCanvas flowId={activeFlowId} />
@@ -345,12 +363,15 @@ interface LogicCanvasProps {
  */
 export function LogicCanvas({ flowId }: LogicCanvasProps) {
   return (
-    <div className="flex flex-col h-full">
-      {/* Toolbar */}
+    // CRITICAL: Use CSS Grid for toolbar + canvas layout
+    // grid-rows-[auto_1fr] = toolbar auto-sized, canvas fills rest
+    <div className="h-full w-full grid grid-rows-[auto_1fr] overflow-hidden">
+      {/* Toolbar - auto height (first grid row) */}
       <FlowToolbar flowId={flowId} />
       
-      {/* Canvas with React Flow Provider */}
-      <div className="flex-1 min-h-0">
+      {/* Canvas with React Flow Provider - fills remaining space (second grid row) */}
+      {/* h-full w-full ensures canvas fills grid cell */}
+      <div className="h-full w-full overflow-hidden">
         <ReactFlowProvider>
           <LogicCanvasInner flowId={flowId} />
         </ReactFlowProvider>

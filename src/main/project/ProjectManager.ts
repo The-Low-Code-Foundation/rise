@@ -911,7 +911,12 @@ npm run preview
    * Get recent projects list
    * 
    * Returns list of recently opened projects, validating that paths still exist.
-   * Automatically removes invalidpaths from the list.
+   * Automatically removes invalid paths from the list.
+   * 
+   * VALIDATION:
+   * - Checks if project directory exists
+   * - Checks if .lowcode folder exists within directory
+   * - Removes entries that fail validation
    * 
    * @returns Promise with array of recent projects
    * 
@@ -921,24 +926,33 @@ npm run preview
     try {
       const data = await this.loadRecentProjectsData();
       
-      // Validate each project path still exists
+      // Validate each project path still exists AND has .lowcode folder
       const validatedProjects: RecentProject[] = [];
+      let hasInvalidProject = false;
       
       for (const project of data.recentProjects) {
         try {
+          // Check if project directory exists
           await fs.access(project.path);
-          // Path exists, keep it
+          
+          // Also check if .lowcode folder exists (project might be partially deleted)
+          const lowcodeDir = path.join(project.path, '.lowcode');
+          await fs.access(lowcodeDir);
+          
+          // Both exist, keep it
           validatedProjects.push(project);
         } catch {
-          // Path doesn't exist anymore, skip it
-          console.log('[ProjectManager] Removed invalid recent project:', project.name);
+          // Path or .lowcode doesn't exist anymore, skip it
+          console.log('[ProjectManager] Removed invalid recent project:', project.name, '-', project.path);
+          hasInvalidProject = true;
         }
       }
       
       // If list changed, save updated list
-      if (validatedProjects.length !== data.recentProjects.length) {
+      if (hasInvalidProject) {
         data.recentProjects = validatedProjects;
         await this.saveRecentProjectsData(data);
+        console.log('[ProjectManager] Saved updated recent projects list:', validatedProjects.length, 'valid projects');
       }
       
       return validatedProjects;

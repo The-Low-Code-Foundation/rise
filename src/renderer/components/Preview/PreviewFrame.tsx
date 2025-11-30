@@ -2,6 +2,9 @@
  * @file PreviewFrame.tsx
  * @description Sandboxed iframe component for rendering the preview
  * 
+ * REFACTORED: Changed responsive mode from relative to absolute positioning
+ * for reliable height handling in nested containers.
+ * 
  * Renders the user's React application in a secure, sandboxed iframe.
  * Handles viewport sizing, zoom transformations, and load states.
  * 
@@ -13,6 +16,7 @@
  * 
  * @architecture Phase 1, Task 1.4B - Preview Panel UI
  * @created 2025-11-25
+ * @updated 2025-11-30 - Fixed responsive mode height with absolute positioning (Task 3.8)
  * @author AI (Cline) + Human Review
  * @confidence 9/10 - Security-conscious iframe implementation
  * 
@@ -170,13 +174,17 @@ export function PreviewFrame({
   };
   
   // Responsive mode - iframe fills the container completely
+  // CRITICAL: Using absolute positioning ensures the iframe fills
+  // the parent container regardless of flexbox/grid nesting issues
   if (isResponsive) {
     return (
       <div
         ref={containerRef}
-        className="relative w-full h-full"
+        className="absolute inset-0 w-full h-full"
         style={{ zIndex: 0, ...checkerboardStyle }}
       >
+        {/* Iframe uses absolute positioning to fill the entire container */}
+        {/* This ensures reliable sizing regardless of parent layout system */}
         <iframe
           ref={iframeRef}
           key={`preview-${refreshKey}`}
@@ -184,7 +192,7 @@ export function PreviewFrame({
           title="Preview"
           onLoad={handleLoad}
           onError={handleError}
-          className="w-full h-full border-0 bg-white"
+          className="absolute inset-0 w-full h-full border-0 bg-white"
           sandbox="allow-scripts allow-same-origin allow-forms"
         />
         

@@ -291,6 +291,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
    * Build import statements for root components
    * 
    * Uses PascalCase for component names to ensure valid React components.
+   * Deduplicates imports to avoid "already declared" errors.
    * 
    * @param components - Sorted root components
    * @returns Import statements as string
@@ -300,7 +301,22 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       return '// No root components yet';
     }
 
-    const imports = components.map((comp) => {
+    // Deduplicate by displayName to avoid duplicate imports
+    // (same component might appear multiple times in rootComponents)
+    const seen = new Set<string>();
+    const uniqueComponents = components.filter((comp) => {
+      const name = comp.displayName;
+      if (seen.has(name)) {
+        if (this.options.debug) {
+          console.warn(`[AppGenerator] Skipping duplicate import for "${name}"`);
+        }
+        return false;
+      }
+      seen.add(name);
+      return true;
+    });
+
+    const imports = uniqueComponents.map((comp) => {
       // Convert to PascalCase for valid React component name
       const componentName = toPascalCase(comp.displayName);
       // Import from ./components/{displayName} (file uses original name)

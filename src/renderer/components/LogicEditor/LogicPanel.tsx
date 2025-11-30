@@ -2,10 +2,22 @@
  * @file LogicPanel.tsx
  * @description Container component for the Logic tab in the editor panel
  * 
+ * REFACTORED: Changed from flexbox to CSS Grid for reliable height handling.
+ * 
+ * LAYOUT STRUCTURE (when canvas shown):
+ * ┌────────────────────────────────────────┐
+ * │ Flow Selector (auto, optional)         │ ← grid-rows: auto
+ * ├────────────────────────────────────────┤
+ * │                                        │
+ * │ Logic Canvas (fills remaining)         │ ← grid-rows: 1fr
+ * │                                        │
+ * └────────────────────────────────────────┘
+ * 
  * @architecture Phase 4, Task 4.1 - React Flow Integration
  * @created 2025-11-29
+ * @updated 2025-11-30 - Refactored to CSS Grid for height fix (Task 3.8)
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Simple container with state management
+ * @confidence 9/10 - CSS Grid layout for reliable height handling
  * 
  * @see src/renderer/components/EditorPanel.tsx - Parent
  * @see src/renderer/components/LogicEditor/LogicCanvas.tsx - Child
@@ -15,8 +27,10 @@
  * - Provides entry point for logic editing in the editor panel
  * - Handles flow selection and creation
  * - Shows appropriate empty states
+ * - FIXED: Proper height propagation with CSS Grid
  * 
  * SOLUTION:
+ * - CSS Grid with grid-rows-[auto_1fr] for flow selector + canvas
  * - Container that manages flow selection
  * - Renders LogicCanvas when a flow is active
  * - Shows empty states for no component or no flows
@@ -108,10 +122,19 @@ export function LogicPanel() {
   }
 
   // Render canvas with flow selector if multiple flows
+  // Use CSS Grid for reliable height handling
+  // - When selector shown: grid-rows-[auto_1fr] (selector auto, canvas fills)
+  // - When selector hidden: grid-rows-[1fr] (canvas fills all)
+  const hasSelector = componentFlows.length > 1;
+  
   return (
-    <div className="flex flex-col h-full">
-      {/* Flow selector (if multiple flows) */}
-      {componentFlows.length > 1 && (
+    <div 
+      className={`h-full w-full grid overflow-hidden ${
+        hasSelector ? 'grid-rows-[auto_1fr]' : 'grid-rows-[1fr]'
+      }`}
+    >
+      {/* Flow selector (if multiple flows) - auto height */}
+      {hasSelector && (
         <FlowSelector 
           flows={componentFlows}
           activeFlowId={activeFlowId}
@@ -119,9 +142,10 @@ export function LogicPanel() {
         />
       )}
 
-      {/* Canvas - flex-1 with min-h-0 for proper flexbox sizing */}
+      {/* Canvas - fills remaining space */}
+      {/* h-full w-full ensures canvas fills grid cell */}
       {activeFlowId && (
-        <div className="flex-1 min-h-0">
+        <div className="h-full w-full overflow-hidden">
           <LogicCanvas flowId={activeFlowId} />
         </div>
       )}

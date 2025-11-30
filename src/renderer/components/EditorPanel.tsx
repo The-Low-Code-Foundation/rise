@@ -2,18 +2,34 @@
  * @file EditorPanel.tsx
  * @description Center editor panel with Preview/Code/Console tabs
  * 
+ * REFACTORED: Changed from flexbox to CSS Grid for reliable height handling.
+ * 
+ * LAYOUT STRUCTURE:
+ * ┌────────────────────────────────────────┐
+ * │ Tab List (auto height)                 │ ← grid-rows: auto
+ * ├────────────────────────────────────────┤
+ * │                                        │
+ * │ Tab Content (fills remaining space)    │ ← grid-rows: 1fr
+ * │                                        │
+ * └────────────────────────────────────────┘
+ * 
  * @architecture Phase 1, Task 1.2 - Three-Panel Layout
  * @created 2025-11-19
  * @updated 2025-11-25 - Added PreviewPanel integration (Task 1.4B)
+ * @updated 2025-11-30 - Refactored to CSS Grid for height fix (Task 3.8)
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Tab system with preview integration
+ * @confidence 9/10 - CSS Grid layout for reliable height handling
  * 
  * PROBLEM SOLVED:
  * - Provides multi-view interface for preview, code, and console
  * - Tab system allows switching between different editor modes
  * - Preview panel with live Vite dev server
+ * - FIXED: Nested flexbox height collapse issue by using CSS Grid
  * 
  * SOLUTION:
+ * - CSS Grid with grid-rows-[auto_1fr] for reliable height handling
+ * - Row 1 (auto): Tab list takes its natural height
+ * - Row 2 (1fr): Tab content fills all remaining space
  * - Headless UI Tab component for accessibility
  * - Keyboard shortcuts for tab switching
  * - State persistence via useLayout hook
@@ -48,8 +64,12 @@ import { LogicPanel } from './LogicEditor';
 /**
  * Editor Panel component
  * 
- * Center panel containing the tabbed interface for Preview, Code, and Console views.
- * Uses Headless UI for accessible tabs and react-hotkeys-hook for keyboard shortcuts.
+ * Center panel containing the tabbed interface for Preview, Code, Console, and Logic views.
+ * Uses CSS Grid with `grid-rows-[auto_1fr]` for reliable height handling:
+ * - Row 1 (auto): Tab list takes its natural height
+ * - Row 2 (1fr): Tab content fills all remaining space
+ * 
+ * This avoids the nested flexbox height collapse issue that occurred with flex-1 chains.
  * 
  * KEYBOARD SHORTCUTS:
  * - Cmd+Shift+P: Switch to Preview tab
@@ -117,13 +137,15 @@ export function EditorPanel() {
   }, [setActiveTab]);
 
   return (
+    // CRITICAL: Use CSS Grid instead of flexbox for reliable height
+    // grid-rows-[auto_1fr] = tab list auto-sized, content fills rest
     <div
-      className="h-full flex flex-col bg-white"
-      data-panel-id="editor"
+      className="h-full w-full grid grid-rows-[auto_1fr] overflow-hidden bg-white"
+      data-panel="editor"
       tabIndex={-1}
     >
       <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
-        {/* Tab List */}
+        {/* Tab List - auto height (first grid row) */}
         <Tab.List className="flex items-center gap-1 px-4 py-2 bg-gray-50 border-b border-gray-200">
           {/* Preview Tab */}
           <Tab
@@ -186,8 +208,10 @@ export function EditorPanel() {
           </Tab>
         </Tab.List>
 
-        {/* Tab Panels - flex-1 with overflow for proper height */}
-        <Tab.Panels className="flex-1 min-h-0 overflow-hidden">
+        {/* Tab Panels Container - fills remaining space (second grid row) */}
+        {/* CRITICAL: h-full + overflow-hidden ensures content is clipped, not expanding */}
+        <Tab.Panels className="h-full overflow-hidden">
+          {/* Each Tab.Panel MUST have h-full to fill the container */}
           <Tab.Panel className="h-full overflow-hidden">
             <PreviewPanel />
           </Tab.Panel>

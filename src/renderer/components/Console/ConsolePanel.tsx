@@ -2,6 +2,19 @@
  * @file ConsolePanel.tsx
  * @description Main console panel component with virtual scrolling
  * 
+ * REFACTORED: Changed from flexbox to CSS Grid for reliable height handling.
+ * 
+ * LAYOUT STRUCTURE:
+ * ┌────────────────────────────────────────┐
+ * │ ConsoleToolbar (auto height)           │ ← grid-rows: auto
+ * ├────────────────────────────────────────┤
+ * │                                        │
+ * │ Console Entries (fills remaining)      │ ← grid-rows: 1fr
+ * │                                        │
+ * ├────────────────────────────────────────┤
+ * │ ConsoleFooter (auto height)            │ ← grid-rows: auto
+ * └────────────────────────────────────────┘
+ * 
  * Integrates all console components:
  * - ConsoleToolbar (filters, search, controls)
  * - Virtual scrolled console entries
@@ -11,10 +24,12 @@
  * 
  * @architecture Phase 1, Task 1.4D - Console UI
  * @created 2025-11-25
+ * @updated 2025-11-30 - Refactored to CSS Grid for height fix (Task 3.8)
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Complex integration with virtual scrolling
+ * @confidence 9/10 - CSS Grid layout with virtual scrolling
  * 
  * KEY FEATURES:
+ * - CSS Grid for reliable height handling
  * - Virtual scrolling (react-window)
  * - Auto-scroll to bottom on new logs
  * - Filter and search integration
@@ -155,15 +170,18 @@ export function ConsolePanel() {
   };
   
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Toolbar */}
+    // CRITICAL: Use CSS Grid for toolbar + content + footer layout
+    // grid-rows-[auto_1fr_auto] = toolbar auto, content fills, footer auto
+    <div className="h-full w-full grid grid-rows-[auto_1fr_auto] overflow-hidden bg-white">
+      {/* Toolbar - auto height (first grid row) */}
       <ConsoleToolbar />
       
-      {/* Console entries */}
+      {/* Console entries - fills remaining space (second grid row) */}
+      {/* overflow-y-auto enables scrolling within the grid cell */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
+        className="h-full overflow-y-auto"
       >
         {filteredLogs.length === 0 ? (
           // Empty state
