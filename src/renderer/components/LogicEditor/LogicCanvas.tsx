@@ -148,7 +148,7 @@ function useContainerDimensions(ref: React.RefObject<HTMLDivElement>) {
 function LogicCanvasInner({ flowId }: LogicCanvasInnerProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { width, height } = useContainerDimensions(reactFlowWrapper);
-  const { project } = useReactFlow();
+  const { screenToFlowPosition } = useReactFlow();
   
   // Get flow from store
   const flow = useLogicStore((state) => state.flows[flowId]);
@@ -178,6 +178,15 @@ function LogicCanvasInner({ flowId }: LogicCanvasInnerProps) {
    */
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      // Filter out dimension changes - they cause infinite loops
+      // and don't need to be persisted to store
+      const meaningfulChanges = changes.filter(
+        (change) => change.type !== 'dimensions'
+      );
+      
+      // Only sync if there are meaningful changes
+      if (meaningfulChanges.length === 0) return;
+      
       // Apply changes to get new nodes
       const newNodes = applyNodeChanges(changes, nodes);
       
@@ -242,9 +251,9 @@ function LogicCanvasInner({ flowId }: LogicCanvasInnerProps) {
       if (!reactFlowBounds) return;
       
       // Project screen coordinates to flow coordinates
-      const position = project({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
       
       // Create new node based on type
@@ -253,7 +262,7 @@ function LogicCanvasInner({ flowId }: LogicCanvasInnerProps) {
         addNode(flowId, newNode);
       }
     },
-    [flowId, project, addNode]
+    [flowId, screenToFlowPosition, addNode]
   );
   
   /**
