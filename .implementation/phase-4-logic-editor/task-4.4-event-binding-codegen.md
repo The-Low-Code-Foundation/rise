@@ -3,10 +3,10 @@
 **Phase:** Phase 4 - Micro Logic Editor  
 **Duration Estimate:** 3-4 days  
 **Actual Duration:** [To be filled]  
-**Status:** 🔵 Not Started  
+**Status:** 🟡 In Progress  
 **Assigned:** Cline + Human Review  
 **Priority:** P0 - Critical  
-**Started:** [YYYY-MM-DD]  
+**Started:** 2025-11-30  
 **Completed:** [YYYY-MM-DD]  
 
 ---
@@ -28,10 +28,10 @@ Now we need to connect them:
 - Generated code should be clean and readable
 
 ### Success Criteria
-- [ ] Components with events get onClick props in generated code
-- [ ] FlowCodeGenerator converts flows to handler functions
-- [ ] Handler functions execute SetState, Alert, Console actions
-- [ ] Generated code imports and uses page state runtime
+- [x] Components with events get onClick props in generated code
+- [x] FlowCodeGenerator converts flows to handler functions
+- [x] Handler functions execute SetState, Alert, Console actions
+- [x] Generated code imports and uses page state runtime
 - [ ] Preview shows working event handlers
 - [ ] Clicking button in preview updates state
 - [ ] Components using `{{state.var}}` update reactively
@@ -55,7 +55,7 @@ Now we need to connect them:
 ### Milestone 1: Event Binding UI
 **Duration:** 0.5 day  
 **Confidence Target:** 9/10  
-**Status:** 🔵 Not Started
+**Status:** ✅ Complete
 
 #### Objective
 Add UI to bind events on components to flows.
@@ -205,7 +205,7 @@ export default EventsSection;
 ### Milestone 2: Flow Code Generator
 **Duration:** 1.5 days  
 **Confidence Target:** 8/10  
-**Status:** 🔵 Not Started
+**Status:** ✅ Complete
 
 #### Objective
 Create FlowCodeGenerator that converts flow definitions to JavaScript handler code.
@@ -484,7 +484,7 @@ export default FlowCodeGenerator;
 ### Milestone 3: ReactCodeGenerator Integration
 **Duration:** 1 day  
 **Confidence Target:** 8/10  
-**Status:** 🔵 Not Started
+**Status:** ✅ Complete (via JSXBuilder + AppGenerator)
 
 #### Objective
 Update ReactCodeGenerator to include event handlers and state in generated components.
@@ -700,6 +700,53 @@ Test the complete flow from editor to preview.
 
 ---
 
-**Task Status:** 🔵 Not Started  
-**Next Step:** Create EventsSection UI  
-**Last Updated:** [Date]
+---
+
+## 📝 Implementation Notes (Added 2025-11-30)
+
+### Files Created/Modified
+
+1. **src/renderer/components/PropertyEditor/EventsSection.tsx** (NEW)
+   - UI component for managing onClick bindings
+   - Shows flow bindings in Property Panel
+   - Allows creating, editing, removing event handlers
+
+2. **src/core/codegen/FlowCodeGenerator.ts** (NEW)
+   - Converts Flow definitions to JavaScript handler code
+   - Supports SetState, Alert, Console action nodes
+   - Topological sort for execution order
+   - Handler naming: `handle{FlowName}_{ComponentId}`
+
+3. **src/core/codegen/types.ts** (MODIFIED)
+   - Added `onClickHandler?: string` to BuilderContext
+   - Enables JSXBuilder to add onClick attributes
+
+4. **src/core/codegen/JSXBuilder.ts** (MODIFIED)
+   - Updated buildAttributes to accept onClickHandler
+   - Generates `onClick={handlerName}` when handler provided
+
+5. **src/core/filemanager/AppGenerator.ts** (MODIFIED)
+   - Added LogicContext interface for state/flows
+   - Added generateAppJsx with logic support
+   - Generates useState hooks from page state
+   - Integrates FlowCodeGenerator for handlers
+   - Passes onClick handlers to child components as props
+
+6. **src/core/codegen/index.ts** (MODIFIED)
+   - Exported FlowCodeGenerator and related types
+
+### Design Decisions
+
+1. **Page-Level State**: State hooks are generated in App.tsx (page scope)
+2. **Handler Location**: Handlers also go in App.tsx to access state setters
+3. **Prop Drilling**: Handlers passed to components via props for Level 1.5 simplicity
+4. **No Expression Evaluation**: Only static values in flows (security)
+
+### Next Steps
+- Task 4.5: End-to-end integration and testing
+- Wire up FileManager to use LogicContext when generating
+- Test with actual flows in preview
+
+**Task Status:** 🟡 In Progress  
+**Next Step:** Testing and Task 4.5 Integration  
+**Last Updated:** 2025-11-30

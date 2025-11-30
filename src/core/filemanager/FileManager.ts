@@ -73,6 +73,7 @@ import {
   type GenerationErrorEvent,
   type UserEditConflictEvent,
 } from './types';
+import type { LogicContext } from './AppGenerator';
 
 /**
  * FileManager orchestrates the complete file generation pipeline
@@ -326,9 +327,10 @@ export class FileManager extends EventEmitter implements IFileManager {
         }
       }
 
-      // Step 3: Generate and write App.jsx
+      // Step 3: Generate and write App.jsx (with logic context for Level 1.5)
       const rootComponents = this.findRootComponents(manifest);
-      const appCode = await this.appGenerator.generateAppJsx(rootComponents);
+      const logicContext = this.buildLogicContext(manifest);
+      const appCode = await this.appGenerator.generateAppJsx(rootComponents, logicContext);
       const appResult = await this.fileWriter.writeFile(this.paths.appJsx, appCode);
       
       if (appResult.success) {
@@ -532,10 +534,14 @@ export class FileManager extends EventEmitter implements IFileManager {
         this.emitEvent('component:removed', { componentId });
       }
 
-      // Step 5: Regenerate App.jsx if root components changed
-      if (changes.appNeedsUpdate) {
+      // Step 5: Regenerate App.jsx if root components changed OR if we have logic data
+      // Logic data (pageState, flows) needs to be regenerated in App.jsx
+      const logicContext = this.buildLogicContext(manifest);
+      const needsAppRegeneration = changes.appNeedsUpdate || !!logicContext;
+      
+      if (needsAppRegeneration) {
         const rootComponents = this.findRootComponents(manifest);
-        const appCode = await this.appGenerator.generateAppJsx(rootComponents);
+        const appCode = await this.appGenerator.generateAppJsx(rootComponents, logicContext);
         const appResult = await this.fileWriter.writeFile(this.paths.appJsx, appCode);
         
         if (appResult.success) {
@@ -745,9 +751,10 @@ export class FileManager extends EventEmitter implements IFileManager {
 
   /**
    * Find root components (components with no parent)
+   * Includes onClick handler references for components with event bindings
    * 
    * @param manifest - Manifest to search
-   * @returns Array of root component info
+   * @returns Array of root component info with handler references
    */
   private findRootComponents(manifest: Manifest): RootComponentInfo[] {
     // Collect all component IDs that are children of some component
@@ -764,15 +771,54 @@ export class FileManager extends EventEmitter implements IFileManager {
     
     for (const component of Object.values(manifest.components)) {
       if (!childIds.has(component.id)) {
-        roots.push({
+        const info: RootComponentInfo = {
           id: component.id,
           displayName: component.displayName,
-        });
+        };
+        
+        // Check if component has onClick event binding (Level 1.5)
+        // If so, include the handler name for App.jsx to pass as prop
+        if (component.events?.onClick?.flowId && manifest.flows) {
+          const flow = manifest.flows[component.events.onClick.flowId];
+          if (flow) {
+            // Generate handler name matching FlowCodeGenerator format
+            const pascalName = flow.name
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .split(/\s+/)
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join('') || 'Click';
+            info.onClickHandler = `handle${pascalName}`;
+          }
+        }
+        
+        roots.push(info);
       }
     }
 
     // Sort alphabetically for consistent output
     return roots.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }
+  
+  /**
+   * Build LogicContext from manifest for App.jsx generation (Level 1.5)
+   * Extracts pageState and flows from manifest for code generation
+   * 
+   * @param manifest - Manifest containing logic data
+   * @returns LogicContext or undefined if no logic data
+   */
+  private buildLogicContext(manifest: Manifest): LogicContext | undefined {
+    const hasPageState = manifest.pageState && Object.keys(manifest.pageState).length > 0;
+    const hasFlows = manifest.flows && Object.keys(manifest.flows).length > 0;
+    
+    // If no logic data, return undefined (no useState needed)
+    if (!hasPageState && !hasFlows) {
+      return undefined;
+    }
+    
+    return {
+      pageState: manifest.pageState || {},
+      flows: manifest.flows || {},
+    };
   }
 
   /**

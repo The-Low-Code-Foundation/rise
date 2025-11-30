@@ -105,3 +105,16 @@ export {
   generateComponent,
   generateAllComponents,
 } from './ReactCodeGenerator';
+
+// ============================================================================
+// FLOW CODE GENERATOR EXPORTS (Task 4.4)
+// ============================================================================
+
+export {
+  FlowCodeGenerator,
+  flowCodeGenerator,
+  generateFlowHandler,
+  generateAllFlowHandlers,
+  type GeneratedHandler,
+  type FlowGenerationResult,
+} from './FlowCodeGenerator';

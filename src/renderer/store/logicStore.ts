@@ -51,6 +51,7 @@ import {
   createEventNode,
   createDefaultStateVariable,
 } from '../../core/logic/types';
+import { useManifestStore } from './manifestStore';
 
 // ============================================================
 // TYPES
@@ -329,6 +330,50 @@ function isValidLevel15NodeType(nodeType: string): nodeType is NodeType {
  * - Edge connections validated (no connecting to event nodes)
  * - State variable names validated for uniqueness
  */
+/**
+ * Helper function to sync logic data to manifest
+ * Called when flows or pageState changes
+ * Uses debouncing to prevent excessive saves
+ */
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+const SYNC_DEBOUNCE_MS = 300;
+
+function syncLogicToManifest(flows: Record<string, Flow>, pageState: PageState): void {
+  // Clear existing timeout
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
+  }
+  
+  // Debounce the sync
+  syncTimeout = setTimeout(() => {
+    const manifestStore = useManifestStore.getState();
+    
+    // Update manifest with logic data using setState (compatible with immer)
+    // We must use the setState function with a partial update
+    const currentManifest = manifestStore.manifest;
+    if (currentManifest) {
+      // Use setState with immer-compatible update
+      useManifestStore.setState((state) => {
+        if (state.manifest) {
+          state.manifest.flows = flows;
+          state.manifest.pageState = pageState;
+          state.manifest.metadata.updatedAt = new Date().toISOString();
+        }
+      });
+      
+      // Trigger save to file
+      manifestStore.saveManifest().catch((err) => {
+        console.error('[LogicStore] Failed to save manifest after logic sync:', err);
+      });
+      
+      console.log('[LogicStore] Synced logic to manifest', {
+        flowCount: Object.keys(flows).length,
+        stateVarCount: Object.keys(pageState).length,
+      });
+    }
+  }, SYNC_DEBOUNCE_MS);
+}
+
 export const useLogicStore = create<LogicState>()(
   devtools(
     subscribeWithSelector((set, get) => ({
@@ -698,5 +743,98 @@ export const useLogicStore = create<LogicState>()(
     { name: 'logic-store' }
   )
 );
+
+// ============================================================
+// SUBSCRIPTIONS - Bidirectional Sync with ManifestStore
+// ============================================================
+
+/**
+ * Subscribe to flows changes and sync to manifest
+ * This ensures flows are persisted when they change in the editor
+ * 
+ * Uses a guard flag to prevent infinite loops when we receive changes
+ * from the manifest store and don't want to sync them back.
+ */
+let syncGuard = false;
+
+useLogicStore.subscribe(
+  (state) => state.flows,
+  (flows, previousFlows) => {
+    // Skip sync if we're currently loading from manifest
+    if (syncGuard) return;
+    
+    // Only sync if flows object reference changed (actual modification)
+    if (flows !== previousFlows && Object.keys(flows).length > 0) {
+      const { pageState } = useLogicStore.getState();
+      syncLogicToManifest(flows, pageState);
+    }
+  }
+);
+
+/**
+ * Subscribe to pageState changes and sync to manifest
+ * This ensures state variables are persisted when they change
+ */
+useLogicStore.subscribe(
+  (state) => state.pageState,
+  (pageState, previousPageState) => {
+    // Skip sync if we're currently loading from manifest
+    if (syncGuard) return;
+    
+    // Only sync if pageState object reference changed
+    if (pageState !== previousPageState && Object.keys(pageState).length > 0) {
+      const { flows } = useLogicStore.getState();
+      syncLogicToManifest(flows, pageState);
+    }
+  }
+);
+
+/**
+ * Subscribe to manifestStore changes to load logic data when manifest changes
+ * This handles the case when a project is loaded - we need to populate logicStore
+ * with flows and pageState from the loaded manifest.
+ * 
+ * Note: manifestStore uses immer middleware (not subscribeWithSelector),
+ * so we use the basic subscribe API and track previous state manually.
+ */
+let previousManifestRef: unknown = null;
+
+useManifestStore.subscribe((state) => {
+  const manifest = state.manifest;
+  
+  // Only act if manifest reference changed (new manifest loaded)
+  if (manifest !== previousManifestRef) {
+    if (manifest && !previousManifestRef) {
+      // New manifest loaded - extract logic data
+      const flows = manifest.flows || {};
+      const pageState = manifest.pageState || {};
+      
+      // Only load if there's logic data to load OR if this is a fresh project
+      // (we want to clear any stale logic state when a new project is opened)
+      console.log('[LogicStore] New manifest detected, loading logic data', {
+        flowCount: Object.keys(flows).length,
+        stateVarCount: Object.keys(pageState).length,
+      });
+      
+      // Set guard to prevent sync loop
+      syncGuard = true;
+      
+      // Load into logicStore
+      useLogicStore.getState().loadFromManifest(flows, pageState);
+      
+      // Clear guard after a tick
+      setTimeout(() => {
+        syncGuard = false;
+      }, 0);
+    } else if (!manifest && previousManifestRef) {
+      // Manifest was cleared (project closed) - reset logicStore
+      console.log('[LogicStore] Manifest cleared, resetting logic store');
+      useLogicStore.getState().reset();
+    }
+    
+    // Update reference tracker
+    previousManifestRef = manifest;
+  }
+});
 
 export default useLogicStore;

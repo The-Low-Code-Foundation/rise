@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "1.0.0",
+  "level": 1.5,
+  "metadata": {
+    "projectName": "Counter Example",
+    "framework": "react",
+    "createdAt": "2025-11-30T00:00:00Z",
+    "updatedAt": "2025-11-30T00:00:00Z"
+  },
+  "components": {
+    "comp_container": {
+      "id": "comp_container",
+      "displayName": "CounterApp",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["p-8", "max-w-md", "mx-auto", "text-center", "bg-white", "rounded-xl", "shadow-lg"]
+      },
+      "children": ["comp_title", "comp_display", "comp_buttons"],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_title": {
+      "id": "comp_title",
+      "displayName": "Title",
+      "type": "h1",
+      "category": "typography",
+      "properties": {
+        "text": {
+          "type": "static",
+          "dataType": "string",
+          "value": "Counter Application"
+        }
+      },
+      "styling": {
+        "baseClasses": ["text-2xl", "font-bold", "text-gray-800", "mb-6"]
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_display": {
+      "id": "comp_display",
+      "displayName": "CountDisplay",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["text-6xl", "font-bold", "text-blue-600", "mb-8", "p-4", "bg-blue-50", "rounded-lg"]
+      },
+      "children": ["comp_count_text"],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_count_text": {
+      "id": "comp_count_text",
+      "displayName": "CountText",
+      "type": "span",
+      "category": "typography",
+      "properties": {
+        "text": {
+          "type": "static",
+          "dataType": "string",
+          "value": "{{state.count}}"
+        }
+      },
+      "styling": {
+        "baseClasses": []
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_buttons": {
+      "id": "comp_buttons",
+      "displayName": "ButtonGroup",
+      "type": "div",
+      "category": "layout",
+      "properties": {},
+      "styling": {
+        "baseClasses": ["flex", "gap-4", "justify-center", "flex-wrap"]
+      },
+      "children": ["comp_decrement", "comp_reset", "comp_increment", "comp_alert"],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_decrement": {
+      "id": "comp_decrement",
+      "displayName": "DecrementButton",
+      "type": "button",
+      "category": "input",
+      "properties": {
+        "label": {
+          "type": "static",
+          "dataType": "string",
+          "value": "- Decrement"
+        }
+      },
+      "styling": {
+        "baseClasses": ["px-6", "py-3", "bg-red-500", "text-white", "rounded-lg", "hover:bg-red-600", "font-semibold", "transition-colors"]
+      },
+      "events": {
+        "onClick": {
+          "flowId": "flow_decrement"
+        }
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_reset": {
+      "id": "comp_reset",
+      "displayName": "ResetButton",
+      "type": "button",
+      "category": "input",
+      "properties": {
+        "label": {
+          "type": "static",
+          "dataType": "string",
+          "value": "Reset"
+        }
+      },
+      "styling": {
+        "baseClasses": ["px-6", "py-3", "bg-gray-500", "text-white", "rounded-lg", "hover:bg-gray-600", "font-semibold", "transition-colors"]
+      },
+      "events": {
+        "onClick": {
+          "flowId": "flow_reset"
+        }
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_increment": {
+      "id": "comp_increment",
+      "displayName": "IncrementButton",
+      "type": "button",
+      "category": "input",
+      "properties": {
+        "label": {
+          "type": "static",
+          "dataType": "string",
+          "value": "+ Increment"
+        }
+      },
+      "styling": {
+        "baseClasses": ["px-6", "py-3", "bg-green-500", "text-white", "rounded-lg", "hover:bg-green-600", "font-semibold", "transition-colors"]
+      },
+      "events": {
+        "onClick": {
+          "flowId": "flow_increment"
+        }
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    },
+    "comp_alert": {
+      "id": "comp_alert",
+      "displayName": "AlertButton",
+      "type": "button",
+      "category": "input",
+      "properties": {
+        "label": {
+          "type": "static",
+          "dataType": "string",
+          "value": "Show Alert"
+        }
+      },
+      "styling": {
+        "baseClasses": ["px-6", "py-3", "bg-yellow-500", "text-white", "rounded-lg", "hover:bg-yellow-600", "font-semibold", "transition-colors"]
+      },
+      "events": {
+        "onClick": {
+          "flowId": "flow_alert"
+        }
+      },
+      "children": [],
+      "metadata": {
+        "createdAt": "2025-11-30T00:00:00Z",
+        "updatedAt": "2025-11-30T00:00:00Z",
+        "createdBy": "user"
+      }
+    }
+  },
+  "pageState": {
+    "count": {
+      "type": "number",
+      "initialValue": 0
+    }
+  },
+  "flows": {
+    "flow_increment": {
+      "id": "flow_increment",
+      "name": "Increment Counter",
+      "trigger": {
+        "type": "onClick",
+        "componentId": "comp_increment"
+      },
+      "nodes": [
+        {
+          "id": "node_event_inc",
+          "type": "event",
+          "position": { "x": 100, "y": 150 },
+          "config": {
+            "eventType": "onClick",
+            "componentId": "comp_increment"
+          }
+        },
+        {
+          "id": "node_setState_inc",
+          "type": "setState",
+          "position": { "x": 350, "y": 150 },
+          "config": {
+            "variable": "count",
+            "operation": "increment",
+            "value": 1
+          }
+        },
+        {
+          "id": "node_console_inc",
+          "type": "console",
+          "position": { "x": 600, "y": 150 },
+          "config": {
+            "level": "log",
+            "message": "Counter incremented!"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "edge_inc_1", "source": "node_event_inc", "target": "node_setState_inc" },
+        { "id": "edge_inc_2", "source": "node_setState_inc", "target": "node_console_inc" }
+      ]
+    },
+    "flow_decrement": {
+      "id": "flow_decrement",
+      "name": "Decrement Counter",
+      "trigger": {
+        "type": "onClick",
+        "componentId": "comp_decrement"
+      },
+      "nodes": [
+        {
+          "id": "node_event_dec",
+          "type": "event",
+          "position": { "x": 100, "y": 150 },
+          "config": {
+            "eventType": "onClick",
+            "componentId": "comp_decrement"
+          }
+        },
+        {
+          "id": "node_setState_dec",
+          "type": "setState",
+          "position": { "x": 350, "y": 150 },
+          "config": {
+            "variable": "count",
+            "operation": "decrement",
+            "value": 1
+          }
+        },
+        {
+          "id": "node_console_dec",
+          "type": "console",
+          "position": { "x": 600, "y": 150 },
+          "config": {
+            "level": "log",
+            "message": "Counter decremented!"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "edge_dec_1", "source": "node_event_dec", "target": "node_setState_dec" },
+        { "id": "edge_dec_2", "source": "node_setState_dec", "target": "node_console_dec" }
+      ]
+    },
+    "flow_reset": {
+      "id": "flow_reset",
+      "name": "Reset Counter",
+      "trigger": {
+        "type": "onClick",
+        "componentId": "comp_reset"
+      },
+      "nodes": [
+        {
+          "id": "node_event_reset",
+          "type": "event",
+          "position": { "x": 100, "y": 150 },
+          "config": {
+            "eventType": "onClick",
+            "componentId": "comp_reset"
+          }
+        },
+        {
+          "id": "node_setState_reset",
+          "type": "setState",
+          "position": { "x": 350, "y": 150 },
+          "config": {
+            "variable": "count",
+            "operation": "set",
+            "value": 0
+          }
+        },
+        {
+          "id": "node_console_reset",
+          "type": "console",
+          "position": { "x": 600, "y": 150 },
+          "config": {
+            "level": "info",
+            "message": "Counter reset to 0"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "edge_reset_1", "source": "node_event_reset", "target": "node_setState_reset" },
+        { "id": "edge_reset_2", "source": "node_setState_reset", "target": "node_console_reset" }
+      ]
+    },
+    "flow_alert": {
+      "id": "flow_alert",
+      "name": "Show Alert",
+      "trigger": {
+        "type": "onClick",
+        "componentId": "comp_alert"
+      },
+      "nodes": [
+        {
+          "id": "node_event_alert",
+          "type": "event",
+          "position": { "x": 100, "y": 150 },
+          "config": {
+            "eventType": "onClick",
+            "componentId": "comp_alert"
+          }
+        },
+        {
+          "id": "node_alert",
+          "type": "alert",
+          "position": { "x": 350, "y": 150 },
+          "config": {
+            "message": "Hello from Rise! The counter app is working."
+          }
+        }
+      ],
+      "edges": [
+        { "id": "edge_alert_1", "source": "node_event_alert", "target": "node_alert" }
+      ]
+    }
+  }
+}

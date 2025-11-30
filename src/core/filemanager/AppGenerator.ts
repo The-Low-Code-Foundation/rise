@@ -38,6 +38,9 @@
 
 import * as prettier from 'prettier';
 import type { IAppGenerator } from './types';
+import type { Flow, PageState } from '../logic/types';
+import { FlowCodeGenerator } from '../codegen/FlowCodeGenerator';
+import { generateStateCode } from '../state';
 
 /**
  * Root component info for App.jsx generation
@@ -48,6 +51,20 @@ export interface RootComponentInfo {
   
   /** Component display name (used for import and JSX) */
   displayName: string;
+  
+  /** Optional onClick handler name if component has onClick binding (Task 4.4) */
+  onClickHandler?: string;
+}
+
+/**
+ * Logic context for generating state and handlers (Task 4.4)
+ */
+export interface LogicContext {
+  /** Page-level state variables (Record of variable name to state definition) */
+  pageState: PageState;
+  
+  /** Logic flows */
+  flows: Record<string, Flow>;
 }
 
 /**
@@ -161,17 +178,24 @@ export class AppGenerator implements IAppGenerator {
    * Generate App.jsx with root component imports
    * 
    * @param rootComponents - Array of root component info
+   * @param logicContext - Optional logic context with state and flows (Task 4.4)
    * @returns Promise<string> - Formatted App.jsx code
    * 
    * @example
    * ```typescript
    * const code = await generator.generateAppJsx([
    *   { id: 'comp_1', displayName: 'Header' },
-   *   { id: 'comp_2', displayName: 'Footer' },
-   * ]);
+   *   { id: 'comp_2', displayName: 'Footer', onClickHandler: 'handleFooterClick' },
+   * ], {
+   *   pageState: [{ name: 'count', type: 'number', initialValue: 0 }],
+   *   flows: { ... },
+   * });
    * ```
    */
-  async generateAppJsx(rootComponents: RootComponentInfo[]): Promise<string> {
+  async generateAppJsx(
+    rootComponents: RootComponentInfo[],
+    logicContext?: LogicContext
+  ): Promise<string> {
     const startTime = performance.now();
 
     // Sort components alphabetically by display name for consistent output
@@ -188,14 +212,24 @@ export class AppGenerator implements IAppGenerator {
     // Build comment header
     const header = this.buildCommentHeader();
 
+    // Build state hooks and handlers (Task 4.4)
+    const { stateCode, handlerCode, useStateImport } = this.buildLogicCode(logicContext);
+
+    // Build React import (include useState if needed)
+    const reactImport = useStateImport 
+      ? "import React, { useState } from 'react';"
+      : "import React from 'react';";
+
     // Assemble complete file
     // Use "RootApp" wrapper name to avoid conflicts with user components named "App"
-    const code = `import React from 'react';
+    const code = `${reactImport}
 
 ${header}
 ${imports}
 
 function RootApp() {
+${stateCode}
+${handlerCode}
   return (
     <div className="app">
 ${jsx}
@@ -331,6 +365,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
    * 
    * Uses PascalCase for JSX tags to ensure they're interpreted as React components
    * (not as HTML elements like <div>).
+   * Passes onClick handlers as props when components have event bindings (Task 4.4).
    * 
    * @param components - Sorted root components
    * @returns JSX elements as string (with indentation)
@@ -343,11 +378,72 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     const jsx = components.map((comp) => {
       // Convert to PascalCase for valid React JSX tag
       const componentName = toPascalCase(comp.displayName);
+      
+      // If component has onClick handler, pass it as prop (Task 4.4)
+      if (comp.onClickHandler) {
+        return `      <${componentName} onClick={${comp.onClickHandler}} />`;
+      }
+      
       // Render each component as self-closing JSX
       return `      <${componentName} />`;
     });
 
     return jsx.join('\n');
+  }
+
+  /**
+   * Build state hooks and event handlers code (Task 4.4)
+   * 
+   * Uses PageStateRuntime for state hooks and FlowCodeGenerator for handlers.
+   * 
+   * @param logicContext - Optional logic context
+   * @returns Object with stateCode, handlerCode, and useStateImport flag
+   */
+  private buildLogicCode(logicContext?: LogicContext): {
+    stateCode: string;
+    handlerCode: string;
+    useStateImport: boolean;
+  } {
+    // Check if we have any state or flows
+    const hasPageState = logicContext?.pageState && Object.keys(logicContext.pageState).length > 0;
+    const hasFlows = logicContext?.flows && Object.keys(logicContext.flows).length > 0;
+    
+    // No logic context = no state or handlers
+    if (!logicContext || (!hasPageState && !hasFlows)) {
+      return { stateCode: '', handlerCode: '', useStateImport: false };
+    }
+
+    const { pageState, flows } = logicContext;
+
+    // Generate state hooks from PageStateRuntime
+    let stateCode = '';
+    if (hasPageState) {
+      // generateStateCode returns GeneratedStateCode with fullCode property
+      const stateResult = generateStateCode(pageState);
+      // Use the hooks array, indented for component body
+      stateCode = stateResult.hooks.map(h => `  ${h}`).join('\n');
+    }
+
+    // Generate handlers from FlowCodeGenerator
+    let handlerCode = '';
+    if (hasFlows) {
+      const generator = new FlowCodeGenerator();
+      const result = generator.generateAll(flows);
+      
+      if (result.handlers.length > 0) {
+        handlerCode = result.handlers.map(h => h.code).join('\n\n');
+      }
+      
+      // Log any warnings
+      if (result.warnings.length > 0 && this.options.debug) {
+        result.warnings.forEach(w => console.warn('[AppGenerator]', w));
+      }
+    }
+
+    // Need useState import if we have any state
+    const useStateImport: boolean = hasPageState ?? false;
+
+    return { stateCode, handlerCode, useStateImport };
   }
 
   /**

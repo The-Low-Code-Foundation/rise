@@ -105,8 +105,9 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
     // Determine if this is a self-closing element
     const selfClosing = isSelfClosingTag(component.type);
 
-    // Build attribute string (className, other attributes)
-    const attributes = this.buildAttributes(component, actualElementType);
+    // Build attribute string (className, onClick handler, other attributes)
+    // Pass onClickHandler from context for event binding (Task 4.4)
+    const attributes = this.buildAttributes(component, actualElementType, context.onClickHandler);
 
     // Get indent string for multi-line content
     const baseIndent = this.getIndentString(indentLevel);
@@ -205,13 +206,14 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
 
   /**
    * Build the attributes string for an element
-   * Includes className, style, and other applicable props
+   * Includes className, style, onClick handler, and other applicable props
    *
    * @param component - The component definition
    * @param _actualElementType - The actual HTML element type (after mapping virtual types) - reserved for future use
-   * @returns Attribute string like ' className="btn" style={{...}} disabled={disabled}'
+   * @param onClickHandler - Optional onClick handler name from context (Task 4.4)
+   * @returns Attribute string like ' className="btn" style={{...}} onClick={handler} disabled={disabled}'
    */
-  private buildAttributes(component: Component, _actualElementType: string): string {
+  private buildAttributes(component: Component, _actualElementType: string, onClickHandler?: string): string {
     const attrs: string[] = [];
 
     // 1. Add className from styling.baseClasses
@@ -231,7 +233,13 @@ export class JSXBuilder implements IBuilder<BuilderContext, JSXBuildResult> {
       attrs.push('type="checkbox"');
     }
 
-    // 4. Add props that should be element attributes
+    // 4. Add onClick handler if provided (Task 4.4 - Event Binding)
+    // This connects the component to its logic flow handler
+    if (onClickHandler) {
+      attrs.push(`onClick={${onClickHandler}}`);
+    }
+
+    // 5. Add props that should be element attributes
     // For Level 1, we only add props that are standard HTML attributes
     const propAttrs = this.buildPropAttributes(component);
     attrs.push(...propAttrs);

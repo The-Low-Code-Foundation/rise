@@ -19,3 +19,4 @@ export { AddPropertyDialog } from './AddPropertyDialog';
 export { ComponentInfoEditor } from './ComponentInfoEditor';
 export { StylingEditor } from './StylingEditor';
 export { InlineStylesEditor } from './InlineStylesEditor';
+export { EventsSection } from './EventsSection';

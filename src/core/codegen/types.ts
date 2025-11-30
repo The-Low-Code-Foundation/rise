@@ -277,6 +277,13 @@ export interface BuilderContext {
    * 0 = root level
    */
   indentLevel: number;
+
+  /**
+   * Optional onClick handler name (Task 4.4 - Event Binding)
+   * When provided, adds onClick={handlerName} attribute to element
+   * e.g., "handleButtonClick" → onClick={handleButtonClick}
+   */
+  onClickHandler?: string;
 }
 
 // ============================================================================

@@ -42,7 +42,8 @@ import { ProjectSettings } from './ProjectSettings';
 import { 
   ComponentInfoEditor, 
   PropertiesEditor, 
-  StylingEditor 
+  StylingEditor,
+  EventsSection,
 } from './PropertyEditor';
 
 /**
@@ -109,6 +110,9 @@ export function PropertiesPanel(): React.ReactElement {
 
             {/* Editable Styling */}
             <StylingEditor component={selectedComponent} />
+
+            {/* Events Section (Task 4.4) */}
+            <EventsSection component={selectedComponent} />
 
             {/* Read-only Metadata */}
             <MetadataSection component={selectedComponent} />

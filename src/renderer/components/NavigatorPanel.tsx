@@ -38,12 +38,15 @@ import {
   XMarkIcon,
   ArrowPathIcon,
   CubeIcon,
+  VariableIcon,
 } from '@heroicons/react/24/outline';
 import { useProjectStore } from '../store/projectStore';
 import { useManifestStore } from '../store/manifestStore';
+import { useLogicStore } from '../store/logicStore';
 import { FileTree } from './FileTree/FileTree';
 import { ComponentTree } from './ComponentTree';
 import { AddComponentDialog } from './ComponentTree/AddComponentDialog';
+import { StatePanel } from './StatePanel';
 
 /**
  * Navigator Panel component
@@ -73,8 +76,12 @@ export function NavigatorPanel() {
   const manifest = useManifestStore((state) => state.manifest);
   const addComponent = useManifestStore((state) => state.addComponent);
   
-  // Tab state ('files' | 'components')
-  const [activeTab, setActiveTab] = useState<'files' | 'components'>('files');
+  // Get page state count for badge
+  const pageState = useLogicStore((state) => state.pageState);
+  const stateCount = Object.keys(pageState).length;
+  
+  // Tab state ('files' | 'components' | 'state')
+  const [activeTab, setActiveTab] = useState<'files' | 'components' | 'state'>('files');
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +133,7 @@ export function NavigatorPanel() {
   /**
    * Handle tab change
    */
-  const handleTabChange = useCallback((tab: 'files' | 'components') => {
+  const handleTabChange = useCallback((tab: 'files' | 'components' | 'state') => {
     setActiveTab(tab);
     setSearchQuery(''); // Clear search when switching tabs
   }, []);
@@ -259,6 +266,26 @@ export function NavigatorPanel() {
                 {manifest && Object.keys(manifest.components).length > 0 && (
                   <span className="text-xs text-gray-500">
                     {Object.keys(manifest.components).length}
+                  </span>
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => handleTabChange('state')}
+              className={`
+                flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors
+                ${activeTab === 'state'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }
+              `}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <VariableIcon className="w-4 h-4" />
+                <span>State</span>
+                {stateCount > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {stateCount}
                   </span>
                 )}
               </div>
@@ -405,6 +432,13 @@ export function NavigatorPanel() {
                 onAddComponent={handleAddComponentClick}
               />
             </div>
+          </section>
+        )}
+
+        {/* Tab Content: State */}
+        {activeTab === 'state' && (
+          <section className="flex-1 flex flex-col">
+            <StatePanel />
           </section>
         )}
       </div>

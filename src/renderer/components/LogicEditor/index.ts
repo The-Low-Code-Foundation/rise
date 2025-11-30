@@ -10,3 +10,4 @@ export { LogicCanvas } from './LogicCanvas';
 export { LogicPanel } from './LogicPanel';
 export { NodePalette } from './NodePalette';
 export { FlowToolbar } from './FlowToolbar';
+export { FlowErrorBoundary } from './FlowErrorBoundary';
