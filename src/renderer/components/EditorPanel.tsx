@@ -140,11 +140,11 @@ export function EditorPanel() {
     // CRITICAL: Use CSS Grid instead of flexbox for reliable height
     // grid-rows-[auto_1fr] = tab list auto-sized, content fills rest
     <div
-      className="h-full w-full grid grid-rows-[auto_1fr] overflow-hidden bg-white"
+      className="h-full w-full overflow-hidden bg-white"
       data-panel="editor"
       tabIndex={-1}
     >
-      <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange}>
+      <Tab.Group selectedIndex={selectedIndex} onChange={handleTabChange} className="h-full overflow-hidden">
         {/* Tab List - auto height (first grid row) */}
         <Tab.List className="flex items-center gap-1 px-4 py-2 bg-gray-50 border-b border-gray-200">
           {/* Preview Tab */}
