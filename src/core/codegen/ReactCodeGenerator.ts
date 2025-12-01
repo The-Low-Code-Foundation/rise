@@ -167,11 +167,18 @@ export class ReactCodeGenerator implements IAsyncBuilder<BuilderContext, Generat
     };
 
     // Create builder context
+    // Check if component has onClick event binding (Level 1.5 - Task 4.4)
+    // If so, component needs to accept onClick prop and forward it to root element
+    const hasOnClickEvent = !!(component.events?.onClick?.flowId && manifest.flows?.[component.events.onClick.flowId]);
+    
     const context: BuilderContext = {
       component,
       manifest,
       options: mergedOptions,
       indentLevel: 0,
+      // When component has onClick event, it receives onClick as a prop from App.jsx
+      // and forwards it to the root element: onClick={onClick}
+      onClickHandler: hasOnClickEvent ? 'onClick' : undefined,
     };
 
     try {

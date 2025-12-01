@@ -79,14 +79,21 @@ export class PropsBuilder implements IBuilder<BuilderContext, PropsBuildResult> 
    * ```
    */
   build(context: BuilderContext): PropsBuildResult {
-    const { component } = context;
+    const { component, onClickHandler } = context;
     const properties = component.properties;
 
     // Get property entries and sort alphabetically for consistency
     const propEntries = Object.entries(properties);
+    
+    // Track event handler props that need to be added (Task 4.4)
+    // When a component has onClick event binding, it receives onClick as a prop
+    const eventProps: string[] = [];
+    if (onClickHandler) {
+      eventProps.push('onClick');
+    }
 
-    // Handle empty properties
-    if (propEntries.length === 0) {
+    // Handle empty properties (but may still have event handlers)
+    if (propEntries.length === 0 && eventProps.length === 0) {
       return {
         code: '',
         propNames: [],
@@ -112,9 +119,16 @@ export class PropsBuilder implements IBuilder<BuilderContext, PropsBuildResult> 
       const propString = this.formatPropWithDefault(propName, defaultValue, propDef);
       propStrings.push(propString);
     }
+    
+    // Add event handler props at the end (Task 4.4 - Event Binding)
+    // These are function props passed from parent (App.jsx) without defaults
+    for (const eventProp of eventProps) {
+      propNames.push(eventProp);
+      propStrings.push(eventProp); // Just the name, no default value
+    }
 
     // Join props with comma and space
-    const code = `{ ${propStrings.join(', ')} }`;
+    const code = propStrings.length > 0 ? `{ ${propStrings.join(', ')} }` : '';
 
     return {
       code,

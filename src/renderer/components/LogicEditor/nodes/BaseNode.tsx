@@ -150,8 +150,10 @@ export function BaseNode({
         Content section 
         - White background for form control visibility
         - Node-specific UI rendered here
+        - nodrag class prevents React Flow from capturing mouse events
+          allowing inputs, selects, and other interactive elements to work
       */}
-      <div className="px-3 py-2 bg-white rounded-b-lg">
+      <div className="px-3 py-2 bg-white rounded-b-lg nodrag">
         {children}
       </div>
       

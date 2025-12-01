@@ -86,7 +86,7 @@ function ValueInput({ type, value, onChange }: ValueInputProps) {
         <select
           className="w-full text-sm border border-gray-300 rounded px-2 py-1 
                      focus:outline-none focus:ring-1 focus:ring-blue-400 
-                     bg-white cursor-pointer"
+                     bg-white cursor-pointer nowheel"
           value={String(value)}
           onChange={(e) => onChange(e.target.value === 'true')}
         >
@@ -288,7 +288,7 @@ export function SetStateNodeComponent({
             <select
               className="w-full text-sm border border-gray-300 rounded px-2 py-1
                          focus:outline-none focus:ring-1 focus:ring-blue-400
-                         bg-white cursor-pointer"
+                         bg-white cursor-pointer nowheel"
               value={data.variable || ''}
               onChange={handleVariableChange}
             >

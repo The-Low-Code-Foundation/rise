@@ -229,7 +229,7 @@ export function ConsoleNodeComponent({
           <select
             className={`w-full text-sm border border-gray-300 rounded px-2 py-1
                        focus:outline-none focus:ring-1 ${focusClass}
-                       bg-white cursor-pointer`}
+                       bg-white cursor-pointer nowheel`}
             value={level}
             onChange={handleLevelChange}
           >
