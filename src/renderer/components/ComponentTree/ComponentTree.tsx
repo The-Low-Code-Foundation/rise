@@ -1,25 +1,24 @@
 /**
  * @file ComponentTree.tsx
- * @description Component tree displaying manifest component hierarchy
+ * @description Component tree displaying manifest component hierarchy with drag-and-drop reordering
  * 
- * @architecture Phase 2, Task 2.1 - Component Tree UI
+ * @architecture Phase 2, Task 2.1 - Component Tree UI + Drag-and-Drop Enhancement
  * @created 2025-11-25
  * @author AI (Cline) + Human Review
- * @confidence 9/10 - Adapted from FileTree patterns
+ * @confidence 9/10 - Uses @dnd-kit for reliable drag-and-drop
  * 
  * PROBLEM SOLVED:
  * - Display component hierarchy from manifest
- * - Expand/collapse component nodes
- * - Select components for editing
+ * - Drag-and-drop to reorder components
+ * - Drag to nest inside another component
+ * - Drag to un-nest (move out of parent)
  * - Search/filter by component name
- * - Empty state when no manifest loaded
  * 
  * SOLUTION:
- * - Subscribe to manifestStore
- * - Render flat tree (pre-computed by store)
- * - ComponentNode for each visible component
- * - Search with debouncing
- * - Empty state with helpful message
+ * - DndContext from @dnd-kit/core wraps the tree
+ * - Each ComponentNode is draggable (useDraggable)
+ * - Drop zones appear during drag (before/after/inside)
+ * - reorderComponent handles all move operations
  * 
  * @performance Virtual scrolling if >50 components (future optimization)
  * @security-critical false
@@ -27,14 +26,26 @@
  */
 
 import React, { useMemo, useState, useCallback } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  pointerWithin,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+  UniqueIdentifier,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
-  XMarkIcon,
   CubeIcon,
   TrashIcon,
   DocumentDuplicateIcon,
   ExclamationTriangleIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline';
 import { useManifestStore } from '../../store/manifestStore';
 import { ComponentNode } from './ComponentNode';
@@ -46,34 +57,131 @@ import type { ComponentTreeNode } from '../../../core/manifest/types';
  * Component tree props
  */
 interface ComponentTreeProps {
-  searchQuery?: string; // External search query (from NavigatorPanel)
-  onAddComponent?: () => void; // Callback to open "Add Component" dialog
+  searchQuery?: string;
+  onAddComponent?: () => void;
 }
 
 /**
- * ComponentTree component
- * 
- * Displays the component hierarchy from the manifest store.
- * Supports:
- * - Expand/collapse nodes
- * - Select components
- * - Search/filter by name
- * - Empty state
- * 
- * The tree is computed by manifestStore.getComponentTree() which:
- * - Finds root components
- * - Recursively adds children if expanded
- * - Includes selection and expansion state
- * 
- * @param searchQuery - Optional search filter
- * @param onAddComponent - Optional callback for "Add Component" button
- * 
- * @returns ComponentTree element
- * 
- * @example
- * ```tsx
- * <ComponentTree searchQuery={searchText} />
- * ```
+ * Drop position indicator 
+ */
+type DropPosition = 'before' | 'after' | 'inside';
+
+/**
+ * Active drop target information
+ */
+interface DropTarget {
+  targetId: string;
+  position: DropPosition;
+}
+
+/**
+ * Draggable AND droppable component node wrapper
+ * Nodes are both draggable (can be moved) and droppable (can receive drops)
+ */
+function DraggableNode({
+  node,
+  onToggleExpand,
+  onSelect,
+  onContextMenu,
+  isDragging,
+  activeDropTarget,
+}: {
+  node: ComponentTreeNode;
+  onToggleExpand: (id: string) => void;
+  onSelect: (id: string) => void;
+  onContextMenu: (node: ComponentTreeNode, e: React.MouseEvent) => void;
+  isDragging: boolean;
+  activeDropTarget: DropTarget | null;
+}) {
+  // Make node draggable
+  const { attributes, listeners, setNodeRef: setDragRef, transform } = useDraggable({
+    id: node.id,
+    data: { node },
+  });
+
+  // Make node droppable (so we can drop other nodes onto it)
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: node.id,
+    data: { node },
+  });
+
+  // Combine refs - need to set both on the same element
+  const setNodeRef = (element: HTMLElement | null) => {
+    setDragRef(element);
+    setDropRef(element);
+  };
+
+  const style = transform ? {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  } : undefined;
+
+  // Show drop indicators when dragging
+  const showBeforeIndicator = activeDropTarget?.targetId === node.id && activeDropTarget?.position === 'before';
+  const showAfterIndicator = activeDropTarget?.targetId === node.id && activeDropTarget?.position === 'after';
+  const showInsideIndicator = activeDropTarget?.targetId === node.id && activeDropTarget?.position === 'inside';
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {/* Before drop zone indicator */}
+      {showBeforeIndicator && (
+        <div 
+          className="absolute left-0 right-0 h-0.5 bg-blue-500 -top-0.5 z-10"
+          style={{ marginLeft: `${(node.depth * 16) + 8}px` }}
+        />
+      )}
+      
+      {/* Node with drag handle */}
+      <div 
+        className={`flex items-center ${showInsideIndicator || isOver ? 'ring-2 ring-blue-500 ring-inset rounded bg-blue-50' : ''}`}
+      >
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 px-1 py-2 cursor-grab hover:bg-gray-100 rounded"
+          style={{ marginLeft: `${node.depth * 16}px` }}
+        >
+          <Bars3Icon className="w-3 h-3 text-gray-400" />
+        </div>
+        
+        {/* Actual node content */}
+        <div className="flex-1 -ml-1">
+          <ComponentNode
+            node={{ ...node, depth: 0 }} // Reset depth since we handle indentation
+            onToggleExpand={onToggleExpand}
+            onSelect={onSelect}
+            onContextMenu={onContextMenu}
+          />
+        </div>
+      </div>
+      
+      {/* After drop zone indicator */}
+      {showAfterIndicator && (
+        <div 
+          className="absolute left-0 right-0 h-0.5 bg-blue-500 -bottom-0.5 z-10"
+          style={{ marginLeft: `${(node.depth * 16) + 8}px` }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Drag overlay - shows what's being dragged
+ */
+function DragOverlayContent({ node }: { node: ComponentTreeNode }) {
+  return (
+    <div className="bg-white shadow-lg rounded border border-blue-500 p-2 flex items-center gap-2 text-sm">
+      <CubeIcon className="w-4 h-4 text-blue-500" />
+      <span className="font-medium">{node.displayName}</span>
+      <span className="text-gray-400">({node.type})</span>
+    </div>
+  );
+}
+
+/**
+ * ComponentTree component with drag-and-drop support
  */
 export function ComponentTree({ 
   searchQuery = '',
@@ -87,7 +195,12 @@ export function ComponentTree({
   const addComponent = useManifestStore((state) => state.addComponent);
   const deleteComponent = useManifestStore((state) => state.deleteComponent);
   const duplicateComponent = useManifestStore((state) => state.duplicateComponent);
+  const reorderComponent = useManifestStore((state) => state.reorderComponent);
   const getComponent = useManifestStore((state) => state.getComponent);
+
+  // Drag state
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [activeDropTarget, setActiveDropTarget] = useState<DropTarget | null>(null);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -110,15 +223,11 @@ export function ComponentTree({
 
   /**
    * Filter tree based on search query
-   * 
-   * Filters components by display name (case-insensitive).
-   * Returns all components if no search query.
    */
   const filteredTree = useMemo(() => {
     if (!searchQuery.trim()) {
       return componentTree;
     }
-
     const query = searchQuery.toLowerCase();
     return componentTree.filter(node =>
       node.displayName.toLowerCase().includes(query) ||
@@ -127,8 +236,15 @@ export function ComponentTree({
   }, [componentTree, searchQuery]);
 
   /**
+   * Get active node being dragged
+   */
+  const activeNode = useMemo(() => {
+    if (!activeId) return null;
+    return filteredTree.find(n => n.id === activeId) || null;
+  }, [activeId, filteredTree]);
+
+  /**
    * Handle component selection
-   * Wrapper to ensure type safety
    */
   const handleSelect = useCallback((id: string) => {
     selectComponent(id);
@@ -136,7 +252,6 @@ export function ComponentTree({
 
   /**
    * Handle expand/collapse toggle
-   * Wrapper to ensure type safety
    */
   const handleToggleExpand = useCallback((id: string) => {
     toggleExpanded(id);
@@ -155,7 +270,91 @@ export function ComponentTree({
   }, []);
 
   /**
-   * Build context menu items based on selected node
+   * Handle drag start
+   */
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id);
+  }, []);
+
+  /**
+   * Handle drag over - determine drop position
+   */
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { over, active } = event;
+    
+    if (!over || !active) {
+      setActiveDropTarget(null);
+      return;
+    }
+
+    // Check if hovering over a drop zone
+    const overId = over.id.toString();
+    if (overId.includes('-before') || overId.includes('-after') || overId.includes('-inside')) {
+      const [targetId, position] = overId.split('-') as [string, DropPosition];
+      setActiveDropTarget({ targetId, position });
+      return;
+    }
+
+    // Hovering over a node - determine position based on y coordinate
+    const targetNode = filteredTree.find(n => n.id === overId);
+    if (!targetNode) {
+      setActiveDropTarget(null);
+      return;
+    }
+
+    // Can't drop on self
+    if (active.id === overId) {
+      setActiveDropTarget(null);
+      return;
+    }
+
+    // For simplicity, use 'after' as default drop position
+    // The user can use the middle zone indicator to nest (if depth allows)
+    // This avoids complex mouse position tracking
+    if (targetNode.depth < 4) {
+      // Can nest - default to 'inside' for easier nesting UX
+      setActiveDropTarget({ targetId: overId, position: 'inside' });
+    } else {
+      // Can't nest further - position after
+      setActiveDropTarget({ targetId: overId, position: 'after' });
+    }
+  }, [filteredTree]);
+
+  /**
+   * Handle drag end - perform the reorder
+   */
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active } = event;
+    
+    if (activeDropTarget && active) {
+      const draggedId = active.id.toString();
+      const { targetId, position } = activeDropTarget;
+      
+      // Don't allow dropping on self
+      if (draggedId !== targetId) {
+        try {
+          reorderComponent(draggedId, targetId, position);
+        } catch (error) {
+          console.error('[ComponentTree] Reorder failed:', error);
+          // Could show a toast notification here
+        }
+      }
+    }
+
+    setActiveId(null);
+    setActiveDropTarget(null);
+  }, [activeDropTarget, reorderComponent]);
+
+  /**
+   * Handle drag cancel
+   */
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setActiveDropTarget(null);
+  }, []);
+
+  /**
+   * Build context menu items
    */
   const contextMenuItems: ContextMenuItem[] = useMemo(() => {
     if (!contextMenu) return [];
@@ -166,7 +365,6 @@ export function ComponentTree({
 
     const items: ContextMenuItem[] = [];
 
-    // Add child (if not at max depth)
     if (node.depth < 4) {
       items.push({
         type: 'item',
@@ -191,7 +389,6 @@ export function ComponentTree({
       });
     }
 
-    // Duplicate
     items.push({
       type: 'item',
       label: 'Duplicate Component',
@@ -204,7 +401,6 @@ export function ComponentTree({
 
     items.push({ type: 'divider' });
 
-    // Delete
     items.push({
       type: 'item',
       label: 'Delete Component',
@@ -245,7 +441,7 @@ export function ComponentTree({
     }
   }, [deleteConfirm, deleteComponent]);
 
-  // No manifest loaded - show empty state
+  // No manifest loaded
   if (!manifest) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -258,22 +454,11 @@ export function ComponentTree({
         <p className="text-xs text-gray-600 mb-4">
           Create or load a project to see components
         </p>
-        {onAddComponent && (
-          <button
-            onClick={onAddComponent}
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-            disabled
-            title="Load a project first"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Add Component
-          </button>
-        )}
       </div>
     );
   }
 
-  // Manifest loaded but no components - show empty state
+  // No components
   if (componentTree.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -299,7 +484,7 @@ export function ComponentTree({
     );
   }
 
-  // Search returned no results
+  // Search no results
   if (searchQuery && filteredTree.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -314,51 +499,67 @@ export function ComponentTree({
     );
   }
 
-  // Render component tree
   return (
     <>
-      <div className="flex flex-col h-full">
-      {/* Tree Header (optional - for future actions) */}
-      {onAddComponent && filteredTree.length > 0 && (
-        <div className="px-2 py-2 border-b border-gray-200 bg-white flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            {filteredTree.length} component{filteredTree.length !== 1 ? 's' : ''}
-          </span>
-          <button
-            onClick={onAddComponent}
-            className="p-1 rounded hover:bg-gray-100 transition-colors"
-            title="Add component"
-          >
-            <PlusIcon className="w-4 h-4 text-gray-600" />
-          </button>
-        </div>
-      )}
+      <DndContext
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          {onAddComponent && filteredTree.length > 0 && (
+            <div className="px-2 py-2 border-b border-gray-200 bg-white flex items-center justify-between">
+              <span className="text-xs text-gray-500">
+                {filteredTree.length} component{filteredTree.length !== 1 ? 's' : ''}
+                {activeId && ' • Drag to reorder'}
+              </span>
+              <button
+                onClick={onAddComponent}
+                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                title="Add component"
+              >
+                <PlusIcon className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          )}
 
-      {/* Component Tree List */}
-      <div className="flex-1 overflow-y-auto">
-        {filteredTree.map(node => (
-          <ComponentNode
-            key={node.id}
-            node={node}
-            onToggleExpand={handleToggleExpand}
-            onSelect={handleSelect}
-            onContextMenu={handleContextMenu}
-          />
-        ))}
-      </div>
+          {/* Tree List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredTree.map(node => (
+              <DraggableNode
+                key={node.id}
+                node={node}
+                onToggleExpand={handleToggleExpand}
+                onSelect={handleSelect}
+                onContextMenu={handleContextMenu}
+                isDragging={activeId === node.id}
+                activeDropTarget={activeDropTarget}
+              />
+            ))}
+          </div>
 
-      {/* Footer with component count */}
-      {filteredTree.length > 0 && (
-        <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50">
-          <span className="text-xs text-gray-500">
-            {searchQuery 
-              ? `Showing ${filteredTree.length} of ${componentTree.length}`
-              : `${filteredTree.length} component${filteredTree.length !== 1 ? 's' : ''}`
-            }
-          </span>
+          {/* Footer */}
+          {filteredTree.length > 0 && (
+            <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50">
+              <span className="text-xs text-gray-500">
+                {searchQuery 
+                  ? `Showing ${filteredTree.length} of ${componentTree.length}`
+                  : `${filteredTree.length} component${filteredTree.length !== 1 ? 's' : ''}`
+                }
+                {!activeId && ' • Drag to reorder'}
+              </span>
+            </div>
+          )}
         </div>
-      )}
-      </div>
+
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {activeNode && <DragOverlayContent node={activeNode} />}
+        </DragOverlay>
+      </DndContext>
 
       {/* Context Menu */}
       <ContextMenu

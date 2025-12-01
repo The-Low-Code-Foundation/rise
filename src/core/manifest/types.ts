@@ -211,6 +211,20 @@ export interface Manifest extends ManifestVersion {
   components: Record<string, Component>; // Keyed by component ID
   
   /**
+   * Order of root-level components (not children of any other component)
+   * 
+   * This array determines the render order in App.jsx.
+   * First component in array = first rendered = top of page.
+   * 
+   * When a component is added at root level, its ID is appended.
+   * When a component becomes a child, its ID is removed.
+   * When a component is moved to root, its ID is appended.
+   * 
+   * @example ["comp_header_001", "comp_main_002", "comp_footer_003"]
+   */
+  rootComponentOrder?: string[];
+  
+  /**
    * Page-level reactive state (Level 1.5+)
    * 
    * Simple state variables accessible to all components on the page.
@@ -342,6 +356,15 @@ export interface ManifestState {
   duplicateComponent: (id: string) => string; // Returns new component ID
   moveComponent: (id: string, newParentId: string | null) => void;
   
+  /**
+   * Reorder a component within its siblings
+   * 
+   * @param id - Component ID to move
+   * @param targetId - Target component ID to position relative to
+   * @param position - 'before' | 'after' | 'inside' (make child of target)
+   */
+  reorderComponent: (id: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
+  
   // Selection
   selectComponent: (id: string | null) => void;
   
@@ -387,6 +410,7 @@ export const createEmptyManifest = (): Manifest => ({
     },
   },
   components: {},
+  rootComponentOrder: [],
 });
 
 /**
@@ -414,6 +438,7 @@ export const createEmptyLevel15Manifest = (): Manifest => ({
     },
   },
   components: {},
+  rootComponentOrder: [],
   pageState: {},
   flows: {},
 });

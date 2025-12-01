@@ -760,9 +760,10 @@ export class FileManager extends EventEmitter implements IFileManager {
   /**
    * Find root components (components with no parent)
    * Includes onClick handler references for components with event bindings
+   * Uses rootComponentOrder from manifest to determine order (not alphabetical)
    * 
    * @param manifest - Manifest to search
-   * @returns Array of root component info with handler references
+   * @returns Array of root component info with handler references, in correct order
    */
   private findRootComponents(manifest: Manifest): RootComponentInfo[] {
     // Collect all component IDs that are children of some component
@@ -775,40 +776,64 @@ export class FileManager extends EventEmitter implements IFileManager {
     }
 
     // Root components are those NOT in childIds
-    const roots: RootComponentInfo[] = [];
+    const rootComponentIds = Object.keys(manifest.components).filter(
+      id => !childIds.has(id)
+    );
     
+    // Use rootComponentOrder from manifest if available, otherwise use detected roots
+    // This ensures order in tree = order on page
+    let orderedRootIds: string[];
+    if (manifest.rootComponentOrder && manifest.rootComponentOrder.length > 0) {
+      // Use manifest order, filtering to only include actual roots
+      const orderedRoots = manifest.rootComponentOrder.filter(id => 
+        rootComponentIds.includes(id)
+      );
+      // Add any roots not in the order array (backwards compatibility)
+      const unorderedRoots = rootComponentIds.filter(id => 
+        !manifest.rootComponentOrder!.includes(id)
+      );
+      orderedRootIds = [...orderedRoots, ...unorderedRoots];
+    } else {
+      orderedRootIds = rootComponentIds;
+    }
+
     // Create a FlowCodeGenerator instance for consistent handler naming
     const flowCodeGen = new FlowCodeGenerator();
     
-    for (const component of Object.values(manifest.components)) {
-      if (!childIds.has(component.id)) {
-        const info: RootComponentInfo = {
-          id: component.id,
-          displayName: component.displayName,
-        };
+    // Build root component info in the correct order
+    const roots: RootComponentInfo[] = [];
+    
+    for (const componentId of orderedRootIds) {
+      const component = manifest.components[componentId];
+      if (!component) continue;
+      
+      const info: RootComponentInfo = {
+        id: component.id,
+        displayName: component.displayName,
+      };
+      
+      // Task 4.6 FIX: Look up onClick handler by searching flows for this component
+      // The relationship is stored in flow.trigger.componentId, NOT in component.events
+      // This is because flows are the source of truth - they define which component
+      // triggers them via their trigger property
+      if (manifest.flows) {
+        // Find any flow that targets this component's onClick event
+        const onClickFlow = Object.values(manifest.flows).find(
+          flow => flow.trigger.componentId === component.id && flow.trigger.type === 'onClick'
+        );
         
-        // Task 4.6 FIX: Look up onClick handler by searching flows for this component
-        // The relationship is stored in flow.trigger.componentId, NOT in component.events
-        // This is because flows are the source of truth - they define which component
-        // triggers them via their trigger property
-        if (manifest.flows) {
-          // Find any flow that targets this component's onClick event
-          const onClickFlow = Object.values(manifest.flows).find(
-            flow => flow.trigger.componentId === component.id && flow.trigger.type === 'onClick'
-          );
-          
-          if (onClickFlow) {
-            // Use FlowCodeGenerator for consistent handler naming across codebase
-            info.onClickHandler = flowCodeGen.generateHandlerName(onClickFlow);
-          }
+        if (onClickFlow) {
+          // Use FlowCodeGenerator for consistent handler naming across codebase
+          info.onClickHandler = flowCodeGen.generateHandlerName(onClickFlow);
         }
-        
-        roots.push(info);
       }
+      
+      roots.push(info);
     }
 
-    // Sort alphabetically for consistent output
-    return roots.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    // Return in order specified by rootComponentOrder (NOT alphabetically sorted)
+    // Order in array = order on rendered page (top to bottom)
+    return roots;
   }
   
   /**

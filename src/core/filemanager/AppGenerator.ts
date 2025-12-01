@@ -198,16 +198,16 @@ export class AppGenerator implements IAppGenerator {
   ): Promise<string> {
     const startTime = performance.now();
 
-    // Sort components alphabetically by display name for consistent output
-    const sortedComponents = [...rootComponents].sort((a, b) =>
-      a.displayName.localeCompare(b.displayName)
-    );
+    // Use components in the order provided (rootComponentOrder from manifest)
+    // Previously sorted alphabetically, but this ignored user's intended page order
+    // Now: order in array = order on page (top to bottom)
+    const orderedComponents = rootComponents;
 
     // Build imports section
-    const imports = this.buildImports(sortedComponents);
+    const imports = this.buildImports(orderedComponents);
 
     // Build JSX section
-    const jsx = this.buildJsx(sortedComponents);
+    const jsx = this.buildJsx(orderedComponents);
 
     // Build comment header
     const header = this.buildCommentHeader();

@@ -466,6 +466,7 @@ export const useManifestStore = create<ManifestState>()(
      * 
      * Generates unique ID, validates depth, and adds to manifest.
      * If parentId provided, adds as child of that component.
+     * If no parentId, adds to rootComponentOrder for proper ordering.
      * 
      * TEMPLATE INTEGRATION (Task 3.5):
      * - Looks up template from templateRegistry
@@ -558,6 +559,13 @@ export const useManifestStore = create<ManifestState>()(
           if (parent) {
             parent.children.push(id);
           }
+        } else {
+          // No parent = root component, add to rootComponentOrder
+          // Initialize array if it doesn't exist (backwards compatibility)
+          if (!state.manifest!.rootComponentOrder) {
+            state.manifest!.rootComponentOrder = [];
+          }
+          state.manifest!.rootComponentOrder.push(id);
         }
         
         // Update timestamp
@@ -658,10 +666,20 @@ export const useManifestStore = create<ManifestState>()(
 
       set((state) => {
         // Remove from parent's children
+        let wasRootComponent = true;
         for (const comp of Object.values(state.manifest!.components) as Component[]) {
           const index = comp.children.indexOf(id);
           if (index !== -1) {
             comp.children.splice(index, 1);
+            wasRootComponent = false;
+          }
+        }
+        
+        // If root component, remove from rootComponentOrder
+        if (wasRootComponent && state.manifest!.rootComponentOrder) {
+          const rootIdx = state.manifest!.rootComponentOrder.indexOf(id);
+          if (rootIdx !== -1) {
+            state.manifest!.rootComponentOrder.splice(rootIdx, 1);
           }
         }
         
@@ -828,6 +846,136 @@ export const useManifestStore = create<ManifestState>()(
     },
 
     /**
+     * Reorder a component within its siblings or move to different parent
+     * 
+     * Handles three scenarios:
+     * 1. position='before': Place component before target (as sibling)
+     * 2. position='after': Place component after target (as sibling)
+     * 3. position='inside': Make component a child of target
+     * 
+     * Properly maintains rootComponentOrder for root-level components.
+     * 
+     * @param id - Component ID to move
+     * @param targetId - Target component ID to position relative to
+     * @param position - 'before' | 'after' | 'inside'
+     * @throws Error if component not found or would create circular reference
+     */
+    reorderComponent: (id: string, targetId: string, position: 'before' | 'after' | 'inside') => {
+      const state = get();
+      
+      if (!state.manifest) {
+        throw new Error('No manifest loaded');
+      }
+
+      // Can't move to self
+      if (id === targetId) {
+        return;
+      }
+
+      const component = state.manifest.components[id];
+      const targetComponent = state.manifest.components[targetId];
+      
+      if (!component) {
+        throw new Error(`Component not found: ${id}`);
+      }
+      if (!targetComponent) {
+        throw new Error(`Target component not found: ${targetId}`);
+      }
+
+      // Check for circular reference when moving inside
+      if (position === 'inside') {
+        const isDescendant = (ancestorId: string, checkId: string): boolean => {
+          const ancestor = state.manifest!.components[ancestorId];
+          if (!ancestor) return false;
+          if (ancestor.children.includes(checkId)) return true;
+          return ancestor.children.some(childId => isDescendant(childId, checkId));
+        };
+        
+        if (isDescendant(id, targetId)) {
+          throw new Error('Cannot move component: would create circular reference');
+        }
+
+        // Validate depth
+        const targetDepth = state.getComponentDepth(targetId);
+        const componentSubtreeDepth = getMaxDescendantDepth(state.manifest.components, id, 0);
+        
+        if (targetDepth + 1 + componentSubtreeDepth > MAX_DEPTH) {
+          throw new Error(`Maximum nesting depth (${MAX_DEPTH + 1} levels) would be exceeded`);
+        }
+      }
+
+      // Find the current parent of the component being moved
+      const findParent = (componentId: string): string | null => {
+        for (const [parentId, comp] of Object.entries(state.manifest!.components)) {
+          if (comp.children.includes(componentId)) {
+            return parentId;
+          }
+        }
+        return null;
+      };
+
+      const currentParentId = findParent(id);
+      const targetParentId = findParent(targetId);
+
+      set((state) => {
+        // Initialize rootComponentOrder if needed
+        if (!state.manifest!.rootComponentOrder) {
+          // Build from existing root components
+          const roots = Object.keys(state.manifest!.components).filter((compId) => {
+            return !Object.values(state.manifest!.components).some((comp) =>
+              comp.children.includes(compId)
+            );
+          });
+          state.manifest!.rootComponentOrder = roots;
+        }
+
+        // Step 1: Remove from current location
+        if (currentParentId) {
+          // Remove from parent's children
+          const parent = state.manifest!.components[currentParentId];
+          const idx = parent.children.indexOf(id);
+          if (idx !== -1) {
+            parent.children.splice(idx, 1);
+          }
+        } else {
+          // Remove from rootComponentOrder
+          const idx = state.manifest!.rootComponentOrder!.indexOf(id);
+          if (idx !== -1) {
+            state.manifest!.rootComponentOrder!.splice(idx, 1);
+          }
+        }
+
+        // Step 2: Insert at new location
+        // IMPORTANT: Access target via state.manifest, not the frozen reference
+        if (position === 'inside') {
+          // Make component a child of target
+          const target = state.manifest!.components[targetId];
+          target.children.push(id);
+        } else {
+          // Insert as sibling (before or after target)
+          if (targetParentId) {
+            // Target has a parent - insert in parent's children array
+            const parent = state.manifest!.components[targetParentId];
+            const targetIdx = parent.children.indexOf(targetId);
+            const insertIdx = position === 'before' ? targetIdx : targetIdx + 1;
+            parent.children.splice(insertIdx, 0, id);
+          } else {
+            // Target is a root component - insert in rootComponentOrder
+            const targetIdx = state.manifest!.rootComponentOrder!.indexOf(targetId);
+            const insertIdx = position === 'before' ? targetIdx : targetIdx + 1;
+            state.manifest!.rootComponentOrder!.splice(insertIdx, 0, id);
+          }
+        }
+
+        // Update timestamp
+        state.manifest!.metadata.updatedAt = new Date().toISOString();
+      });
+
+      // Auto-save
+      get().saveManifest().catch(console.error);
+    },
+
+    /**
      * Select component for editing
      * 
      * @param id - Component ID to select (null to deselect)
@@ -956,6 +1104,7 @@ export const useManifestStore = create<ManifestState>()(
      * Get component tree as flat array with depth info
      * 
      * Computes tree structure with expansion and selection state.
+     * Uses rootComponentOrder to maintain proper ordering of root-level components.
      * Used for rendering the component tree UI.
      * 
      * @returns Array of ComponentTreeNode objects
@@ -968,11 +1117,28 @@ export const useManifestStore = create<ManifestState>()(
       }
 
       // Find root components (no parent)
-      const rootIds = Object.keys(state.manifest.components).filter((id) => {
+      const allRootIds = Object.keys(state.manifest.components).filter((id) => {
         return !Object.values(state.manifest!.components).some((comp) =>
           comp.children.includes(id)
         );
       });
+
+      // Use rootComponentOrder if available, otherwise use detected roots
+      // This ensures proper ordering: first component in array = first in tree = top of page
+      let rootIds: string[];
+      if (state.manifest.rootComponentOrder && state.manifest.rootComponentOrder.length > 0) {
+        // Filter to only include IDs that actually exist and are roots
+        const orderedRoots = state.manifest.rootComponentOrder.filter(id => 
+          allRootIds.includes(id)
+        );
+        // Add any roots that aren't in the order array (backwards compatibility)
+        const unorderedRoots = allRootIds.filter(id => 
+          !state.manifest!.rootComponentOrder!.includes(id)
+        );
+        rootIds = [...orderedRoots, ...unorderedRoots];
+      } else {
+        rootIds = allRootIds;
+      }
 
       const result: ComponentTreeNode[] = [];
 
@@ -993,7 +1159,7 @@ export const useManifestStore = create<ManifestState>()(
 
         result.push(node);
 
-        // Add children if expanded
+        // Add children if expanded (children array order is already respected)
         if (node.isExpanded) {
           for (const childId of component.children) {
             addNode(childId, depth + 1, id);
@@ -1001,7 +1167,7 @@ export const useManifestStore = create<ManifestState>()(
         }
       };
 
-      // Build tree from roots
+      // Build tree from roots in order
       for (const rootId of rootIds) {
         addNode(rootId, 0, null);
       }
