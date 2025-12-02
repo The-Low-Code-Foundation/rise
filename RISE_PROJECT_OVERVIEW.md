@@ -223,7 +223,7 @@ AI Generates Complex Stuff → User Refines Visually → Export Clean Code
 - ✅ Clean code output (not proprietary)
 - ✅ Separate visual/logic canvases (less spaghetti)
 - ✅ AI-assisted generation (not manual everything)
-- ✅ Open source roadmap (community-driven)
+- ✅ Open source with a clean, documented code-base
 
 ### vs. Cursor / VS Code
 - ✅ Visual component editor (not just text files)
@@ -409,7 +409,7 @@ AI Generates Complex Stuff → User Refines Visually → Export Clean Code
 | Feature | Bubble/Noodl | Loveable/v0 | Rise |
 |---------|--------------|-------------|------|
 | Visual Editor | ✅ | ❌ | ✅ |
-| AI Generation | ❌ | ✅ | ✅ |
+| AI Generation | ✅ | ✅ | ✅ |
 | Clean Code Output | ❌ | ⚠️ | ✅ |
 | Logic Canvas | ⚠️ | ❌ | ✅ |
 | Zero Lock-in | ❌ | ✅ | ✅ |

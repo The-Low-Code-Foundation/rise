@@ -237,16 +237,16 @@ export class FlowCodeGenerator {
    * PUBLIC API: This method is used by both FlowCodeGenerator and FileManager
    * to ensure consistent handler names across code generation and prop wiring.
    *
-   * Format: handle{FlowNamePascalCase}
+   * Format: handle{FlowNamePascalCase}_{ComponentIdSuffix}
    *
    * @param flow - Flow to generate name for
-   * @returns Handler function name (e.g., "handleButtonClick")
+   * @returns Handler function name (e.g., "handleButtonClick_abc123")
    *
    * @example
    * ```typescript
    * const generator = new FlowCodeGenerator();
    * const name = generator.generateHandlerName(flow);
-   * // name = "handleButtonClick"
+   * // name = "handleButtonClick_abc123"
    * ```
    */
   public generateHandlerName(flow: Flow): string {
@@ -256,12 +256,17 @@ export class FlowCodeGenerator {
       .split(/\s+/) // Split on whitespace
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('');
-    
+
     // If name is empty or just whitespace, use component ID
     const baseName = pascalName || 'Click';
-    
-    // Add handler prefix
-    return `handle${baseName}`;
+
+    // Extract a unique suffix from component ID to ensure uniqueness
+    // Use the last segment of the component ID (e.g., "comp_button_123456_abc" -> "abc")
+    const componentIdParts = flow.trigger.componentId.split('_');
+    const suffix = componentIdParts[componentIdParts.length - 1] || 'handler';
+
+    // Add handler prefix and unique suffix
+    return `handle${baseName}_${suffix}`;
   }
 
   // --------------------------------------------------------

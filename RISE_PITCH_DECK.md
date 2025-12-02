@@ -501,15 +501,15 @@ Prettier Formatting → File Writing → HMR Update
 | Feature | Bubble | Webflow | Noodl | Loveable | v0 | Cursor | **Rise** |
 |---------|--------|---------|-------|----------|-----|--------|----------|
 | Visual Component Editor | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| AI Generation | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ✅ |
+| AI Generation | ✅ | ❌ | ⚠️ | ✅ | ✅ | ⚠️ | ✅ |
 | Clean Code Export | ❌ | ⚠️ | ❌ | ⚠️ | ✅ | ✅ | ✅ |
 | Visual Logic Editor | ⚠️ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Zero Vendor Lock-in | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Zero Vendor Lock-in | ❌ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
 | Visual Refinement | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Hosted Backend | ✅ | ⚠️ | ⚠️ | ⚠️ | ❌ | ❌ | 🔮 |
-| Self-hosting | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Self-hosting | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | Framework Agnostic | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ✅ | 🔮 |
-| Plugin System | ❌ | ⚠️ | ❌ | ❌ | ❌ | ✅ | 🔮 |
+| Plugin System | ✅ | ⚠️ | ❌ | ❌ | ❌ | ✅ | 🔮 |
 
 **Legend:**  
 ✅ Full support | ⚠️ Limited support | ❌ Not supported | 🔮 Planned

@@ -53,7 +53,7 @@ import {
 } from '../../core/manifest/types';
 import { templateRegistry } from '../../core/templates';
 import { useProjectStore } from './projectStore';
-import type { 
+import type {
   ValidationError as IPCValidationError,
   ManifestLoadResult,
 } from '../types/electron';
@@ -290,6 +290,31 @@ export const useManifestStore = create<ManifestState>()(
     loadManifest: (manifest: Manifest) => {
       set((state) => {
         state.manifest = manifest;
+
+        // Clean up orphaned flows (flows that reference deleted components)
+        if (state.manifest.flows) {
+          const componentIds = new Set(Object.keys(state.manifest.components));
+          const flowsToDelete: string[] = [];
+
+          for (const [flowId, flow] of Object.entries(state.manifest.flows)) {
+            if (!componentIds.has(flow.trigger.componentId)) {
+              console.log('[ManifestStore] Found orphaned flow on load:', flowId, 'for missing component:', flow.trigger.componentId);
+              flowsToDelete.push(flowId);
+            }
+          }
+
+          // Delete orphaned flows
+          for (const flowId of flowsToDelete) {
+            delete state.manifest.flows[flowId];
+          }
+
+          if (flowsToDelete.length > 0) {
+            console.log('[ManifestStore] Cleaned up', flowsToDelete.length, 'orphaned flows on manifest load');
+            // Mark manifest as modified so it gets saved
+            state.manifest.metadata.updatedAt = new Date().toISOString();
+          }
+        }
+
         // Reset selection and expansion on load
         state.selectedComponentId = null;
         state.expandedComponentIds = new Set<string>();
@@ -327,6 +352,31 @@ export const useManifestStore = create<ManifestState>()(
 
         set((state) => {
           state.manifest = result.manifest || null;
+
+          // Clean up orphaned flows (flows that reference deleted components)
+          if (state.manifest?.flows) {
+            const componentIds = new Set(Object.keys(state.manifest.components));
+            const flowsToDelete: string[] = [];
+
+            for (const [flowId, flow] of Object.entries(state.manifest.flows)) {
+              if (!componentIds.has(flow.trigger.componentId)) {
+                console.log('[ManifestStore] Found orphaned flow on file load:', flowId, 'for missing component:', flow.trigger.componentId);
+                flowsToDelete.push(flowId);
+              }
+            }
+
+            // Delete orphaned flows
+            for (const flowId of flowsToDelete) {
+              delete state.manifest.flows[flowId];
+            }
+
+            if (flowsToDelete.length > 0) {
+              console.log('[ManifestStore] Cleaned up', flowsToDelete.length, 'orphaned flows on file load');
+              // Mark manifest as modified so it gets saved
+              state.manifest.metadata.updatedAt = new Date().toISOString();
+            }
+          }
+
           state.isLoading = false;
           state.validationErrors = result.validationErrors || [];
           state.validationWarnings = result.validationWarnings || [];
@@ -665,6 +715,28 @@ export const useManifestStore = create<ManifestState>()(
       const idsToDelete = collectDescendants(id);
 
       set((state) => {
+        // Clean up flows that reference any of the components being deleted
+        // This must happen BEFORE deleting components to maintain referential integrity
+        if (state.manifest!.flows) {
+          const flowsToDelete: string[] = [];
+
+          // Find all flows that reference components being deleted
+          for (const [flowId, flow] of Object.entries(state.manifest!.flows)) {
+            if (idsToDelete.includes(flow.trigger.componentId)) {
+              flowsToDelete.push(flowId);
+            }
+          }
+
+          // Delete the flows
+          for (const flowId of flowsToDelete) {
+            console.log('[ManifestStore] Deleting orphaned flow:', flowId, 'for component:', state.manifest!.flows[flowId]?.trigger.componentId);
+            delete state.manifest!.flows[flowId];
+          }
+
+          if (flowsToDelete.length > 0) {
+            console.log('[ManifestStore] Deleted', flowsToDelete.length, 'orphaned flows');
+          }
+        }
         // Remove from parent's children
         let wasRootComponent = true;
         for (const comp of Object.values(state.manifest!.components) as Component[]) {

@@ -92,10 +92,18 @@ export function LogicPanel() {
   // Auto-select first flow when component changes (must be before any returns!)
   const firstFlowId = componentFlows[0]?.id || null;
   useEffect(() => {
-    if (firstFlowId && (!activeFlowId || !flows[activeFlowId])) {
+    // Check if we need to switch flows:
+    // 1. There's a first flow available
+    // 2. AND either:
+    //    - No active flow is set, OR
+    //    - Active flow doesn't exist anymore, OR
+    //    - Active flow belongs to a different component (not in componentFlows)
+    const activeFlowBelongsToComponent = activeFlowId && componentFlows.some(f => f.id === activeFlowId);
+
+    if (firstFlowId && (!activeFlowId || !flows[activeFlowId] || !activeFlowBelongsToComponent)) {
       setActiveFlow(firstFlowId);
     }
-  }, [firstFlowId, activeFlowId, flows, setActiveFlow]);
+  }, [firstFlowId, activeFlowId, flows, setActiveFlow, componentFlows]);
 
   // If no component selected, show selection prompt
   if (!selectedComponentId || !selectedComponent) {
